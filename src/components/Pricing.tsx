@@ -19,7 +19,7 @@ export default function Pricing() {
               on combed 30s.
             </p>
             <div className="tier__price">
-              <span className="price-prefix">Start from</span>IDR 60
+              <span className="price-prefix">Start from</span>IDR 104
               <small>k</small>
             </div>
             <div className="tier__unit">Per piece, blank included</div>
@@ -61,7 +61,7 @@ export default function Pricing() {
               fabric, colors, and quantity grow.
             </p>
             <div className="tier__price">
-              <span className="price-prefix">Start from</span>IDR 55
+              <span className="price-prefix">Start from</span>IDR 99
               <small>k / pc</small>
             </div>
             <div className="tier__unit">From 24 pcs, 1+ colors</div>
