@@ -23,11 +23,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
   title: {
-    default: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
+    default: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
     template: "%s | Screenprinting Bali",
   },
   description:
-    "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp. From 1 piece to full drops.",
+    "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp. From 1 piece to full drops.",
   keywords: [
     "screen printing Bali",
     "screenprinting Bali",
@@ -53,9 +53,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
+    title: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
     description:
-      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp.",
+      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp.",
     url: "https://screenprintingbali.com",
     siteName: "Screenprinting Bali",
     type: "website",
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
+    title: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
     description:
-      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp.",
+      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp.",
     images: ["/images/spb_logo.png"],
   },
   icons: {
