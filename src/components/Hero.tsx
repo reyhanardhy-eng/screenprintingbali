@@ -18,8 +18,8 @@ export default function Hero() {
         </h1>
         <p className="hero__sub">
           A design-led screen printing &amp; garment studio for the drop
-          you&apos;ve been planning. Eight years of design, two rotary
-          presses, one island. Designed and printed in-house, not outsourced.
+          you&apos;ve been planning. In-house production, no middlemen.
+          Message us on WhatsApp and we&apos;ll handle the rest.
         </p>
         <div className="hero__cta">
           <a href="#pricing" className="btn">

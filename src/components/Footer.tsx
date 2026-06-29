@@ -19,7 +19,7 @@ export default function Footer() {
                 Bali.
               </span>
             </div>
-            <p>A design-led screen printing studio. Bali, Indonesia.</p>
+            <p>In-house screen printing studio. Bali, Indonesia.</p>
           </div>
           <div className="footer__col">
             <h5>Studio</h5>
