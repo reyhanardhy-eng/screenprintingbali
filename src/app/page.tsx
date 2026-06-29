@@ -10,21 +10,40 @@ import Pricing from "@/components/Pricing";
 import Faq from "@/components/Faq";
 import FinalCta from "@/components/FinalCta";
 import Footer from "@/components/Footer";
+import Reveal from "@/components/Reveal";
 
 export default function Home() {
   return (
     <>
       <Topbar />
       <Hero />
-      <StayMove />
-      <Paths />
-      <Methods />
-      <Calculator />
-      <Work />
-      <Process />
-      <Pricing />
-      <Faq />
-      <FinalCta />
+      <Reveal>
+        <StayMove />
+      </Reveal>
+      <Reveal>
+        <Paths />
+      </Reveal>
+      <Reveal>
+        <Methods />
+      </Reveal>
+      <Reveal>
+        <Calculator />
+      </Reveal>
+      <Reveal>
+        <Work />
+      </Reveal>
+      <Reveal>
+        <Process />
+      </Reveal>
+      <Reveal>
+        <Pricing />
+      </Reveal>
+      <Reveal>
+        <Faq />
+      </Reveal>
+      <Reveal>
+        <FinalCta />
+      </Reveal>
       <Footer />
     </>
   );

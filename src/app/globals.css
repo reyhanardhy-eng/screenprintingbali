@@ -1144,6 +1144,18 @@ section {
   color: var(--vermillion);
 }
 
+/* ---------- Scroll reveal ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 700ms cubic-bezier(0.16, 0.8, 0.24, 1),
+    transform 700ms cubic-bezier(0.16, 0.8, 0.24, 1);
+}
+.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1151,4 +1163,5 @@ section {
     transition-duration: 0.01ms !important;
   }
   html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; }
 }
