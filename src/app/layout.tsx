@@ -22,9 +22,36 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
-  title: "Screenprinting Bali: Design-led custom apparel printing in Bali",
+  title: {
+    default: "Screenprinting Bali: Design-led custom apparel printing in Bali",
+    template: "%s | Screenprinting Bali",
+  },
   description:
     "A design-led screen printing and garment studio in Bali. In-house production for brand drops, small runs, and one-off custom prints. Eight years of design, made on the island.",
+  keywords: [
+    "screen printing Bali",
+    "screenprinting Bali",
+    "custom t-shirt printing Bali",
+    "DTF printing Bali",
+    "kaos custom Bali",
+    "sablon Bali",
+    "clothing brand Bali",
+    "custom apparel Bali",
+    "print shop Bali",
+    "totebag custom Bali",
+  ],
+  authors: [{ name: "Screenprinting Bali" }],
+  alternates: {
+    canonical: "https://screenprintingbali.com",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
   openGraph: {
     title: "Screenprinting Bali: Print your brand in Bali",
     description:
@@ -32,6 +59,15 @@ export const metadata: Metadata = {
     url: "https://screenprintingbali.com",
     siteName: "Screenprinting Bali",
     type: "website",
+    locale: "en_US",
+    images: [{ url: "/images/spb_logo.png", width: 1200, height: 1200, alt: "Screenprinting Bali" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Screenprinting Bali: Print your brand in Bali",
+    description:
+      "Design-led screen printing & garment studio. In-house production, drops from 1 piece.",
+    images: ["/images/spb_logo.png"],
   },
   icons: {
     icon: [
@@ -40,6 +76,28 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/images/favicon_180.png", sizes: "180x180" }],
   },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Screenprinting Bali",
+  description:
+    "A design-led screen printing and garment studio in Bali. In-house production for brand drops, small runs, and one-off custom prints.",
+  url: "https://screenprintingbali.com",
+  image: "https://screenprintingbali.com/images/spb_logo.png",
+  telephone: "+6283174145415",
+  priceRange: "$$",
+  areaServed: "Bali, Indonesia",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Bali",
+    addressCountry: "ID",
+  },
+  sameAs: ["https://instagram.com/screenprintingbali"],
 };
 
 export default function RootLayout({
@@ -52,7 +110,13 @@ export default function RootLayout({
       lang="en"
       className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
