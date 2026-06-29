@@ -23,11 +23,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
   title: {
-    default: "Screenprinting Bali: Design-led custom apparel printing in Bali",
+    default: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
     template: "%s | Screenprinting Bali",
   },
   description:
-    "A design-led screen printing and garment studio in Bali. In-house production for brand drops, small runs, and one-off custom prints. Eight years of design, made on the island.",
+    "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp. From 1 piece to full drops.",
   keywords: [
     "screen printing Bali",
     "screenprinting Bali",
@@ -53,9 +53,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Screenprinting Bali: Print your brand in Bali",
+    title: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
     description:
-      "Design-led screen printing & garment studio. In-house production, drops from 1 piece.",
+      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp.",
     url: "https://screenprintingbali.com",
     siteName: "Screenprinting Bali",
     type: "website",
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Screenprinting Bali: Print your brand in Bali",
+    title: "Screenprinting Bali — Custom Apparel Printing, Made In-House",
     description:
-      "Design-led screen printing & garment studio. In-house production, drops from 1 piece.",
+      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen — order instantly on WhatsApp.",
     images: ["/images/spb_logo.png"],
   },
   icons: {
