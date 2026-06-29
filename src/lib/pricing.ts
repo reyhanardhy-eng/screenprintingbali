@@ -44,6 +44,7 @@ export type PrintMethod = {
   base_cost: number | null;
   per_extra_color: number | null;
   setup_per_color: number | null;
+  applicable_products: string[] | null;
   sort_order: number;
 };
 

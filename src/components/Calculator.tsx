@@ -156,6 +156,22 @@ function CalculatorReady({
     return m?.type === "screen";
   }, [data, state.method]);
 
+  const methodsForProduct = useMemo(
+    () =>
+      data.printMethods.filter(
+        (m) => !m.applicable_products || m.applicable_products.includes(product.slug)
+      ),
+    [data, product.slug]
+  );
+
+  // If the active method isn't offered for the current product, switch to the first one that is.
+  useEffect(() => {
+    if (methodsForProduct.length === 0) return;
+    if (!methodsForProduct.some((m) => m.slug === state.method)) {
+      setState({ ...state, method: methodsForProduct[0].slug });
+    }
+  }, [methodsForProduct, state, setState]);
+
   const result = useMemo(() => {
     const cut = data.cuts.find((c) => c.slug === state.cut);
     const bagSize = data.bagSizes.find((b) => b.slug === state.bagSize);
@@ -369,7 +385,7 @@ function CalculatorReady({
             <div className="calc-field">
               <label className="calc-field__label">04 / Print method</label>
               <div className="calc-options">
-                {data.printMethods.map((m) => {
+                {methodsForProduct.map((m) => {
                   const disabled = state.qty < m.moq;
                   return (
                     <div

@@ -392,6 +392,7 @@ function PrintMethodsTable({
           <th>Base cost (screen)</th>
           <th>Per extra color (screen)</th>
           <th>Setup per color (screen)</th>
+          <th>Applicable products (comma-separated, blank = all)</th>
         </tr>
       </thead>
       <tbody>
@@ -464,12 +465,25 @@ function PrintMethodsTable({
                 }
               />
             </td>
+            <td>
+              <input
+                value={(r.applicable_products ?? []).join(",")}
+                placeholder="e.g. totebag,paperbag"
+                onChange={(e) =>
+                  update(i, {
+                    applicable_products: e.target.value.trim()
+                      ? e.target.value.split(",").map((s) => s.trim())
+                      : null,
+                  })
+                }
+              />
+            </td>
           </tr>
         ))}
       </tbody>
       <tfoot>
         <tr>
-          <td colSpan={10}>
+          <td colSpan={11}>
             <button className="admin-save-btn" onClick={() => onSave(rows)}>
               Save print methods
             </button>

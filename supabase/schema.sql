@@ -48,6 +48,8 @@ create table if not exists print_methods (
   base_cost numeric,
   per_extra_color numeric,
   setup_per_color numeric,
+  -- Which product slugs this method applies to. NULL = available to all products.
+  applicable_products text[],
   sort_order integer not null default 0
 );
 
@@ -96,14 +98,14 @@ insert into products (slug, label, has_cut_option, has_bag_size_option, moq, sor
 on conflict (slug) do nothing;
 
 insert into fabrics (product_slug, value, label, price, sort_order) values
-  ('tshirt',   'combed16s',  'Combed 16s',  65000, 1),
-  ('tshirt',   'combed24s',  'Combed 24s',  55000, 2),
-  ('tshirt',   'combed30s',  'Combed 30s',  45000, 3),
-  ('hoodie',   'fleece',     'Fleece premium', 95000, 1),
-  ('croptop',  'combed24s',  'Combed 24s',  40000, 1),
-  ('croptop',  'combed30s',  'Combed 30s',  35000, 2),
-  ('tanktop',  'combed24s',  'Combed 24s',  40000, 1),
-  ('tanktop',  'combed30s',  'Combed 30s',  35000, 2),
+  ('tshirt',   'combed16s',  'Combed 16s',  115000, 1),
+  ('tshirt',   'combed24s',  'Combed 24s',  105000, 2),
+  ('tshirt',   'combed30s',  'Combed 30s',  90000, 3),
+  ('hoodie',   'fleece',     'Fleece premium', 130000, 1),
+  ('croptop',  'combed24s',  'Combed 24s',  95000, 1),
+  ('croptop',  'combed30s',  'Combed 30s',  90000, 2),
+  ('tanktop',  'combed24s',  'Combed 24s',  95000, 1),
+  ('tanktop',  'combed30s',  'Combed 30s',  90000, 2),
   ('totebag',  'spunbond',   'Spunbond',    7000,  1),
   ('totebag',  'blacu',      'Blacu',       21000, 2),
   ('totebag',  'rami',       'Rami / jute', 28000, 3),
@@ -125,12 +127,14 @@ insert into bag_sizes (slug, label, dim, multiplier, sort_order) values
 on conflict (slug) do nothing;
 
 -- DTF film rate: Rp 45,000 per 55cm x 100cm roll = 45000 / 5500 per cm2
+-- plastisol is restricted to garments; waterbased is restricted to tote/paper bags (see applicable_products).
 insert into print_methods
-  (slug, label, type, moq, film_rate_per_cm2, press_margin, press_flat_cost, base_cost, per_extra_color, setup_per_color)
+  (slug, label, type, moq, film_rate_per_cm2, press_margin, press_flat_cost, base_cost, per_extra_color, setup_per_color, applicable_products, sort_order)
 values
-  ('dtf',       'DTF',       'dtf',    1,  8.181818, 1.6, 12000, null,  null, null),
-  ('plastisol', 'Plastisol', 'screen', 24, null,      null, null, 15000, 8000, 40000),
-  ('rubber',    'Rubber',    'screen', 24, null,      null, null, 11000, 6000, 40000)
+  ('dtf',        'DTF',        'dtf',    1,  8.181818, 1.6, 12000, null,  null, null, null, 1),
+  ('plastisol',  'Plastisol',  'screen', 24, null,      null, null, 15000, 8000, 40000, array['tshirt','hoodie','croptop','tanktop'], 2),
+  ('rubber',     'Rubber',     'screen', 24, null,      null, null, 11000, 6000, 40000, null, 3),
+  ('waterbased', 'Waterbased', 'screen', 1,  null,      null, null, 10000, 5000, 35000, array['totebag','paperbag'], 4)
 on conflict (slug) do nothing;
 
 insert into design_sizes (slug, label, dim, area_cm2, multiplier, sort_order) values
