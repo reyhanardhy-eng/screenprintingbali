@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import {
   fetchPricingData,
   type BagSize,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/pricing";
 
 export default function AdminPage() {
+  const router = useRouter();
   const [data, setData] = useState<PricingData | null>(null);
   const [status, setStatus] = useState<string>("");
 
@@ -27,8 +29,16 @@ export default function AdminPage() {
   }
 
   async function saveTable(table: string, rows: unknown[]) {
+    const supabase = createClient();
     const { error } = await supabase.from(table).upsert(rows);
     flash(error ? `Error saving ${table}: ${error.message}` : `Saved ${table}.`);
+  }
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/admin/login");
+    router.refresh();
   }
 
   if (!data) {
@@ -42,11 +52,13 @@ export default function AdminPage() {
 
   return (
     <div className="admin-page">
-      <h1>Pricing admin</h1>
-      <p className="admin-sub">
-        Edit calculator numbers directly. No auth yet — keep this URL private
-        until you add login.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <h1>Pricing admin</h1>
+        <button className="admin-save-btn" onClick={handleSignOut}>
+          Sign out
+        </button>
+      </div>
+      <p className="admin-sub">Edit calculator numbers directly.</p>
       {status && <p className="admin-status">{status}</p>}
 
       <ProductsTable
