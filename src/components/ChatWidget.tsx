@@ -11,6 +11,7 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showTeaser, setShowTeaser] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -26,19 +27,52 @@ export default function ChatWidget() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTeaser(true), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  function handleOpen() {
+    setOpen((v) => !v);
+    setShowTeaser(false);
+  }
+
   return (
     <>
+      {showTeaser && !open && (
+        <div className="chat-teaser" onClick={handleOpen}>
+          <button
+            className="chat-teaser__close"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTeaser(false);
+            }}
+          >
+            ×
+          </button>
+          Got a question? Chat with us — we usually reply in minutes.
+        </div>
+      )}
       <button
         className="chat-fab"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Tutup chat" : "Buka chat"}
+        onClick={handleOpen}
+        aria-label={open ? "Close chat" : "Open chat"}
       >
-        {open ? "×" : "Chat"}
+        {open ? (
+          <span className="chat-fab__icon">×</span>
+        ) : (
+          <>
+            <span className="chat-fab__ping" />
+            <span className="chat-fab__icon">💬</span>
+            <span className="chat-fab__label">Chat with us</span>
+          </>
+        )}
       </button>
       {open && (
         <div className="chat-panel">
           {checkingAuth ? (
-            <p className="chat-sub">Memuat…</p>
+            <p className="chat-sub">Loading…</p>
           ) : user ? (
             <ChatThread user={user} />
           ) : (
@@ -76,7 +110,7 @@ function ChatAuth() {
         setError(signUpError.message);
         return;
       }
-      setInfo("Cek email kamu untuk konfirmasi akun, lalu login di sini.");
+      setInfo("Check your email to confirm your account, then sign in here.");
       return;
     }
 
@@ -101,15 +135,15 @@ function ChatAuth() {
   return (
     <div>
       <p className="chat-title">
-        {mode === "signin" ? "Masuk untuk mulai chat" : "Daftar untuk mulai chat"}
+        {mode === "signin" ? "Sign in to start chatting" : "Sign up to start chatting"}
       </p>
-      <p className="chat-sub">Daftar atau masuk dulu untuk chat langsung dengan kami.</p>
+      <p className="chat-sub">Sign up or sign in first so we know who we&apos;re talking to.</p>
 
       <button type="button" className="chat-google-btn" onClick={handleGoogle}>
-        Lanjutkan dengan Google
+        Continue with Google
       </button>
 
-      <div className="chat-divider">atau pakai email</div>
+      <div className="chat-divider">or use email</div>
 
       {error && <p className="chat-error">{error}</p>}
       {info && <p className="chat-info">{info}</p>}
@@ -133,7 +167,7 @@ function ChatAuth() {
           className="chat-input"
         />
         <button type="submit" className="chat-send-btn" disabled={loading}>
-          {loading ? "Memproses..." : mode === "signin" ? "Masuk" : "Daftar"}
+          {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Sign up"}
         </button>
       </form>
 
@@ -146,7 +180,7 @@ function ChatAuth() {
           setInfo("");
         }}
       >
-        {mode === "signin" ? "Belum punya akun? Daftar" : "Sudah punya akun? Masuk"}
+        {mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
       </button>
     </div>
   );
@@ -249,7 +283,7 @@ function ChatThread({ user }: { user: User }) {
   );
 
   if (loading) {
-    return <p className="chat-sub">Memuat percakapan…</p>;
+    return <p className="chat-sub">Loading conversation…</p>;
   }
 
   return (
@@ -257,7 +291,7 @@ function ChatThread({ user }: { user: User }) {
       <p className="chat-title">Live chat</p>
       <div className="chat-messages">
         {messages.length === 0 && (
-          <p className="chat-sub">Tulis pesan kamu, kami akan balas secepatnya.</p>
+          <p className="chat-sub">Write your message, we&apos;ll reply as soon as we can.</p>
         )}
         {messages.map((m) => (
           <div key={m.id} className={`chat-bubble chat-bubble--${m.sender}`}>
@@ -269,12 +303,12 @@ function ChatThread({ user }: { user: User }) {
       <form onSubmit={sendMessage} className="chat-form">
         <input
           className="chat-input"
-          placeholder="Tulis pesan…"
+          placeholder="Write a message…"
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
         <button type="submit" className="chat-send-btn">
-          Kirim
+          Send
         </button>
       </form>
     </div>
