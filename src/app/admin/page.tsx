@@ -106,7 +106,7 @@ export default function AdminPage() {
 
 function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   const [items, setItems] = useState<PortfolioItem[] | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchPortfolioItems().then(setItems).catch(() => setItems([]));
@@ -117,41 +117,56 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     setItems(items.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   }
 
+  async function persist(row: PortfolioItem) {
+    const supabase = createClient();
+    const { id, ...rest } = row;
+    const isNew = id < 0;
+    const { data, error } = isNew
+      ? await supabase.from("portfolio_items").insert(rest).select("*").single()
+      : await supabase.from("portfolio_items").update(rest).eq("id", id).select("*").single();
+
+    if (error || !data) {
+      flash(`Gagal menyimpan: ${error?.message ?? "unknown error"}`);
+      return null;
+    }
+    return data as PortfolioItem;
+  }
+
   async function handleUpload(i: number, file: File) {
     if (!items) return;
-    setUploading(true);
+    const row = items[i];
+    setBusyId(row.id);
     const supabase = createClient();
     const path = `${crypto.randomUUID()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("portfolio")
-      .upload(path, file);
+    const { error: uploadError } = await supabase.storage.from("portfolio").upload(path, file);
 
     if (uploadError) {
-      flash(`Error uploading image: ${uploadError.message}`);
-      setUploading(false);
+      flash(`Gagal upload foto: ${uploadError.message}`);
+      setBusyId(null);
       return;
     }
 
     const { data: pub } = supabase.storage.from("portfolio").getPublicUrl(path);
-    update(i, { image_url: pub.publicUrl });
-    setUploading(false);
+    const saved = await persist({ ...row, image_url: pub.publicUrl });
+    if (saved) {
+      const refreshed = await fetchPortfolioItems();
+      setItems(refreshed);
+      flash("Foto tersimpan.");
+    }
+    setBusyId(null);
   }
 
-  async function handleSave(row: PortfolioItem) {
-    const supabase = createClient();
-    const { id, ...rest } = row;
-    const isNew = id < 0;
-    const { error } = isNew
-      ? await supabase.from("portfolio_items").insert(rest)
-      : await supabase.from("portfolio_items").update(rest).eq("id", id);
-
-    if (error) {
-      flash(`Error saving portfolio item: ${error.message}`);
-      return;
+  async function handleCaptionSave(i: number) {
+    if (!items) return;
+    const row = items[i];
+    setBusyId(row.id);
+    const saved = await persist(row);
+    if (saved) {
+      const refreshed = await fetchPortfolioItems();
+      setItems(refreshed);
+      flash("Keterangan tersimpan.");
     }
-    flash("Saved portfolio item.");
-    const refreshed = await fetchPortfolioItems();
-    setItems(refreshed);
+    setBusyId(null);
   }
 
   async function handleDelete(row: PortfolioItem) {
@@ -162,13 +177,13 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     const supabase = createClient();
     const { error } = await supabase.from("portfolio_items").delete().eq("id", row.id);
     if (error) {
-      flash(`Error deleting portfolio item: ${error.message}`);
+      flash(`Gagal menghapus: ${error.message}`);
       return;
     }
     setItems((items ?? []).filter((r) => r.id !== row.id));
   }
 
-  function addRow() {
+  function addCard() {
     const newRow: PortfolioItem = {
       id: -((items?.length ?? 0) + 1),
       title_line1: "",
@@ -181,85 +196,58 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   }
 
   if (!items) {
-    return <p className="admin-sub">Loading portfolio…</p>;
+    return <p className="admin-sub">Memuat portfolio…</p>;
   }
 
   return (
-    <table className="admin-table">
-      <caption>Portfolio (&quot;Some things we&apos;ve printed&quot;)</caption>
-      <thead>
-        <tr>
-          <th>Image</th>
-          <th>Title line 1</th>
-          <th>Title line 2</th>
-          <th>Meta</th>
-          <th>Sort order</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
+    <div className="portfolio-manager">
+      <p className="admin-sub" style={{ marginTop: -24 }}>
+        Foto yang muncul di bagian &quot;Some things we&apos;ve printed&quot; di halaman utama.
+      </p>
+      <div className="portfolio-grid">
         {items.map((r, i) => (
-          <tr key={r.id}>
-            <td>
-              {r.image_url && (
-                <img src={r.image_url} alt="" style={{ width: 60, height: 75, objectFit: "cover", display: "block", marginBottom: 6 }} />
+          <div key={r.id} className="portfolio-card">
+            <div className="portfolio-card__photo">
+              {r.image_url ? (
+                <img src={r.image_url} alt="" />
+              ) : (
+                <span className="portfolio-card__placeholder">Belum ada foto</span>
               )}
+            </div>
+            <label className="portfolio-card__upload">
+              {busyId === r.id ? "Menyimpan…" : r.image_url ? "Ganti foto" : "Upload foto"}
               <input
                 type="file"
                 accept="image/*"
-                disabled={uploading}
+                disabled={busyId !== null}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleUpload(i, file);
                 }}
+                hidden
               />
-            </td>
-            <td>
-              <input
-                value={r.title_line1}
-                onChange={(e) => update(i, { title_line1: e.target.value })}
-              />
-            </td>
-            <td>
-              <input
-                value={r.title_line2}
-                onChange={(e) => update(i, { title_line2: e.target.value })}
-              />
-            </td>
-            <td>
-              <input
-                value={r.meta}
-                onChange={(e) => update(i, { meta: e.target.value })}
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                value={r.sort_order}
-                onChange={(e) => update(i, { sort_order: Number(e.target.value) })}
-              />
-            </td>
-            <td>
-              <button className="admin-save-btn" onClick={() => handleSave(r)}>
-                Save
-              </button>{" "}
-              <button className="admin-save-btn" onClick={() => handleDelete(r)}>
-                Delete
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colSpan={6}>
-            <button className="admin-save-btn" onClick={addRow}>
-              Add portfolio item
+            </label>
+            <input
+              className="portfolio-card__caption"
+              placeholder="Keterangan singkat, mis. Brand drop · 36 pcs · Plastisol"
+              value={r.meta}
+              onChange={(e) => update(i, { meta: e.target.value })}
+              onBlur={() => handleCaptionSave(i)}
+            />
+            <button
+              type="button"
+              className="portfolio-card__delete"
+              onClick={() => handleDelete(r)}
+            >
+              Hapus
             </button>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+          </div>
+        ))}
+        <button type="button" className="portfolio-card portfolio-card--add" onClick={addCard}>
+          + Tambah foto
+        </button>
+      </div>
+    </div>
   );
 }
 
