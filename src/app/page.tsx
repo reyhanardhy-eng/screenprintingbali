@@ -12,6 +12,8 @@ import FinalCta from "@/components/FinalCta";
 import Footer from "@/components/Footer";
 import Reveal from "@/components/Reveal";
 
+export const revalidate = 60;
+
 export default function Home() {
   return (
     <>

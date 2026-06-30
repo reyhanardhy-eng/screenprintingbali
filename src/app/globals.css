@@ -1194,6 +1194,19 @@ section {
   font-size: 12px;
   font-family: var(--font-body);
 }
+.portfolio-card__save {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 7px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+.portfolio-card__save:hover { background: var(--vermillion); border-color: var(--vermillion); }
+.portfolio-card__save:disabled { opacity: 0.6; cursor: default; }
 .portfolio-card__delete {
   background: none;
   border: none;

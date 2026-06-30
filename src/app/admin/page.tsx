@@ -14,6 +14,7 @@ import {
   type Product,
 } from "@/lib/pricing";
 import { fetchPortfolioItems, type PortfolioItem } from "@/lib/portfolio";
+import { revalidateHome } from "@/app/actions";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -151,7 +152,8 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     if (saved) {
       const refreshed = await fetchPortfolioItems();
       setItems(refreshed);
-      flash("Foto tersimpan.");
+      await revalidateHome();
+      flash("Foto tersimpan dan langsung tampil di website.");
     }
     setBusyId(null);
   }
@@ -164,7 +166,8 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     if (saved) {
       const refreshed = await fetchPortfolioItems();
       setItems(refreshed);
-      flash("Keterangan tersimpan.");
+      await revalidateHome();
+      flash("Keterangan tersimpan dan langsung tampil di website.");
     }
     setBusyId(null);
   }
@@ -181,6 +184,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
       return;
     }
     setItems((items ?? []).filter((r) => r.id !== row.id));
+    await revalidateHome();
   }
 
   function addCard() {
@@ -232,8 +236,15 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               placeholder="Keterangan singkat, mis. Brand drop · 36 pcs · Plastisol"
               value={r.meta}
               onChange={(e) => update(i, { meta: e.target.value })}
-              onBlur={() => handleCaptionSave(i)}
             />
+            <button
+              type="button"
+              className="portfolio-card__save"
+              disabled={busyId !== null}
+              onClick={() => handleCaptionSave(i)}
+            >
+              {busyId === r.id ? "Menyimpan…" : "Simpan"}
+            </button>
             <button
               type="button"
               className="portfolio-card__delete"
