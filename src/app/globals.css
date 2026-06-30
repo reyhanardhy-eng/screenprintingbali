@@ -1079,6 +1079,11 @@ section {
   .footer__legal { flex-direction: column; gap: 12px; }
 }
 
+@media (max-width: 480px) {
+  .footer { padding-bottom: 150px; }
+  .footer__grid { grid-template-columns: 1fr; gap: 32px; }
+}
+
 /* ---------- Admin page (not part of original design) ---------- */
 .admin-page {
   max-width: 980px;
