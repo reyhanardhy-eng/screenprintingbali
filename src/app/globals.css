@@ -1480,8 +1480,27 @@ section {
   padding: 20px;
 }
 
+.chat-backdrop { display: none; }
+
 @media (max-width: 480px) {
-  .chat-panel { width: calc(100vw - 32px); right: 16px; }
+  .chat-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 58;
+    background: rgba(20, 17, 14, 0.55);
+  }
+  .chat-panel {
+    width: auto;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    max-height: 80vh;
+    border-radius: 14px;
+    z-index: 61;
+  }
+  .chat-messages, .chat-messages--admin { max-height: 45vh; }
   .chat-fab { right: 16px; padding: 0 18px 0 16px; }
   .chat-fab__label { display: none; }
   .chat-teaser { right: 16px; max-width: calc(100vw - 32px); }

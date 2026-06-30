@@ -70,15 +70,18 @@ export default function ChatWidget() {
         )}
       </button>
       {open && (
-        <div className="chat-panel">
-          {checkingAuth ? (
-            <p className="chat-sub">Loading…</p>
-          ) : user ? (
-            <ChatThread user={user} />
-          ) : (
-            <ChatAuth />
-          )}
-        </div>
+        <>
+          <div className="chat-backdrop" onClick={() => setOpen(false)} />
+          <div className="chat-panel">
+            {checkingAuth ? (
+              <p className="chat-sub">Loading…</p>
+            ) : user ? (
+              <ChatThread user={user} />
+            ) : (
+              <ChatAuth />
+            )}
+          </div>
+        </>
       )}
     </>
   );
