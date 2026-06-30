@@ -51,7 +51,7 @@ export default function ChatWidget() {
           >
             ×
           </button>
-          Got a question? Chat with us — we usually reply in minutes.
+          Got a question? We usually reply within minutes.
         </div>
       )}
       <button

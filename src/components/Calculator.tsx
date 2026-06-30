@@ -271,10 +271,10 @@ function CalculatorReady({
     if (state.qty < method.moq) {
       note = `// ${methodLabel} needs ${method.moq}+ pcs. Showing an alternative, or raise your quantity.`;
     } else if (productMoq > 1) {
-      note = `// Bags are quoted from ${productMoq} pcs minimum. Ballpark only — final price confirmed on WhatsApp.`;
+      note = `// Bags are quoted from ${productMoq} pcs minimum. Ballpark only. Final price confirmed on WhatsApp.`;
     } else {
       note =
-        "// Ballpark only. Final price depends on your design and finishing — we'll confirm everything on WhatsApp.";
+        "// Ballpark only. Final price depends on your design and finishing. We'll confirm everything on WhatsApp.";
     }
 
     const cutText =

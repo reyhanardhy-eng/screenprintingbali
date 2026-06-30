@@ -56,9 +56,8 @@ export default function Pricing() {
             </div>
             <h3 className="tier__title">Launch your drop</h3>
             <p className="tier__desc">
-              Your first proper run. Screen print on cotton tees — entry
-              pricing on combed 30s, 1 color, scaling up from there as
-              fabric, colors, and quantity grow.
+              Your first proper run. Entry pricing on combed 30s, 1 color,
+              scaling up as fabric, colors, and quantity grow.
             </p>
             <div className="tier__price">
               <span className="price-prefix">Start from</span>IDR 99
@@ -137,7 +136,7 @@ export default function Pricing() {
           // &quot;Start from&quot; prices reflect our entry-level fabric and
           design size. Final quote depends on garment, fabric grade, colors,
           quantity, and design size. Screen setup is a one-time fee per
-          color, amortized across your order — the more pieces, the lower
+          color, amortized across your order. The more pieces, the lower
           the cost per piece.
         </p>
       </div>
