@@ -13,6 +13,7 @@ import {
   type PrintMethod,
   type Product,
 } from "@/lib/pricing";
+import { fetchPortfolioItems, type PortfolioItem } from "@/lib/portfolio";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -54,9 +55,14 @@ export default function AdminPage() {
     <div className="admin-page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1>Pricing admin</h1>
-        <button className="admin-save-btn" onClick={handleSignOut}>
-          Sign out
-        </button>
+        <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
+          <a href="/admin/chat" className="admin-sub" style={{ textDecoration: "underline" }}>
+            Live chat →
+          </a>
+          <button className="admin-save-btn" onClick={handleSignOut}>
+            Sign out
+          </button>
+        </div>
       </div>
       <p className="admin-sub">Edit calculator numbers directly.</p>
       {status && <p className="admin-status">{status}</p>}
@@ -92,7 +98,168 @@ export default function AdminPage() {
         onChange={(rows) => setData({ ...data, designSizes: rows })}
         onSave={(rows) => saveTable("design_sizes", rows)}
       />
+
+      <PortfolioManager flash={flash} />
     </div>
+  );
+}
+
+function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
+  const [items, setItems] = useState<PortfolioItem[] | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchPortfolioItems().then(setItems).catch(() => setItems([]));
+  }, []);
+
+  function update(i: number, patch: Partial<PortfolioItem>) {
+    if (!items) return;
+    setItems(items.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+
+  async function handleUpload(i: number, file: File) {
+    if (!items) return;
+    setUploading(true);
+    const supabase = createClient();
+    const path = `${crypto.randomUUID()}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("portfolio")
+      .upload(path, file);
+
+    if (uploadError) {
+      flash(`Error uploading image: ${uploadError.message}`);
+      setUploading(false);
+      return;
+    }
+
+    const { data: pub } = supabase.storage.from("portfolio").getPublicUrl(path);
+    update(i, { image_url: pub.publicUrl });
+    setUploading(false);
+  }
+
+  async function handleSave(row: PortfolioItem) {
+    const supabase = createClient();
+    const { id, ...rest } = row;
+    const isNew = id < 0;
+    const { error } = isNew
+      ? await supabase.from("portfolio_items").insert(rest)
+      : await supabase.from("portfolio_items").update(rest).eq("id", id);
+
+    if (error) {
+      flash(`Error saving portfolio item: ${error.message}`);
+      return;
+    }
+    flash("Saved portfolio item.");
+    const refreshed = await fetchPortfolioItems();
+    setItems(refreshed);
+  }
+
+  async function handleDelete(row: PortfolioItem) {
+    if (row.id < 0) {
+      setItems((items ?? []).filter((r) => r !== row));
+      return;
+    }
+    const supabase = createClient();
+    const { error } = await supabase.from("portfolio_items").delete().eq("id", row.id);
+    if (error) {
+      flash(`Error deleting portfolio item: ${error.message}`);
+      return;
+    }
+    setItems((items ?? []).filter((r) => r.id !== row.id));
+  }
+
+  function addRow() {
+    const newRow: PortfolioItem = {
+      id: -((items?.length ?? 0) + 1),
+      title_line1: "",
+      title_line2: "",
+      meta: "",
+      image_url: null,
+      sort_order: items?.length ?? 0,
+    };
+    setItems([...(items ?? []), newRow]);
+  }
+
+  if (!items) {
+    return <p className="admin-sub">Loading portfolio…</p>;
+  }
+
+  return (
+    <table className="admin-table">
+      <caption>Portfolio (&quot;Some things we&apos;ve printed&quot;)</caption>
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th>Title line 1</th>
+          <th>Title line 2</th>
+          <th>Meta</th>
+          <th>Sort order</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((r, i) => (
+          <tr key={r.id}>
+            <td>
+              {r.image_url && (
+                <img src={r.image_url} alt="" style={{ width: 60, height: 75, objectFit: "cover", display: "block", marginBottom: 6 }} />
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleUpload(i, file);
+                }}
+              />
+            </td>
+            <td>
+              <input
+                value={r.title_line1}
+                onChange={(e) => update(i, { title_line1: e.target.value })}
+              />
+            </td>
+            <td>
+              <input
+                value={r.title_line2}
+                onChange={(e) => update(i, { title_line2: e.target.value })}
+              />
+            </td>
+            <td>
+              <input
+                value={r.meta}
+                onChange={(e) => update(i, { meta: e.target.value })}
+              />
+            </td>
+            <td>
+              <input
+                type="number"
+                value={r.sort_order}
+                onChange={(e) => update(i, { sort_order: Number(e.target.value) })}
+              />
+            </td>
+            <td>
+              <button className="admin-save-btn" onClick={() => handleSave(r)}>
+                Save
+              </button>{" "}
+              <button className="admin-save-btn" onClick={() => handleDelete(r)}>
+                Delete
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={6}>
+            <button className="admin-save-btn" onClick={addRow}>
+              Add portfolio item
+            </button>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
   );
 }
 

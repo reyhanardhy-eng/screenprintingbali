@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import ChatWidgetGate from "@/components/ChatWidgetGate";
 
 const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
@@ -116,6 +117,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <ChatWidgetGate />
       </body>
     </html>
   );
