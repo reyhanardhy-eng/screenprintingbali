@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -102,10 +103,9 @@ export default function ResetPasswordPage() {
           {error && <p className="admin-status">{error}</p>}
           <div style={{ marginBottom: 16 }}>
             <label className="calc-field__label">Password baru</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               required
               minLength={8}
               style={{
@@ -119,10 +119,9 @@ export default function ResetPasswordPage() {
           </div>
           <div style={{ marginBottom: 24 }}>
             <label className="calc-field__label">Konfirmasi password</label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={setConfirm}
               required
               minLength={8}
               style={{

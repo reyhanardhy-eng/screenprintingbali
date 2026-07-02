@@ -42,6 +42,16 @@ export default function AdminChatPage() {
     );
   }, []);
 
+  const loadMessages = useCallback(async (id: string) => {
+    const supabase = createClient();
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", id)
+      .order("created_at");
+    if (msgs) setMessages(msgs as ChatMessage[]);
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setAdminUser(data.user));
@@ -66,7 +76,7 @@ export default function AdminChatPage() {
         (payload) => {
           const msg = payload.new as ChatMessage;
           if (msg.conversation_id === activeIdRef.current) {
-            setMessages((prev) => [...prev, msg]);
+            setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
           }
           loadConversations();
           if (msg.sender === "visitor" && notifPermission === "granted") {
@@ -81,20 +91,26 @@ export default function AdminChatPage() {
     };
   }, [loadConversations, notifPermission]);
 
+  // Polling fallback: guarantees the list and the open thread stay current
+  // even if the realtime socket drops, without needing a manual refresh.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      loadConversations();
+      if (activeIdRef.current) loadMessages(activeIdRef.current);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [loadConversations, loadMessages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   async function openConversation(id: string) {
     setActiveId(id);
-    const supabase = createClient();
-    const { data: msgs } = await supabase
-      .from("messages")
-      .select("*")
-      .eq("conversation_id", id)
-      .order("created_at");
-    setMessages((msgs as ChatMessage[]) ?? []);
+    await loadMessages(id);
 
+    const supabase = createClient();
     await supabase
       .from("messages")
       .update({ read_by_admin: true })
@@ -109,12 +125,16 @@ export default function AdminChatPage() {
     const supabase = createClient();
     const text = body.trim();
     setSendError("");
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: activeId,
-      sender: "admin",
-      sender_id: adminUser.id,
-      body: text,
-    });
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: activeId,
+        sender: "admin",
+        sender_id: adminUser.id,
+        body: text,
+      })
+      .select("*")
+      .single<ChatMessage>();
     if (error) {
       setSendError(
         error.code === "42501" || error.message.toLowerCase().includes("row-level")
@@ -122,6 +142,9 @@ export default function AdminChatPage() {
           : `Gagal kirim: ${error.message}`
       );
       return;
+    }
+    if (data) {
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data]));
     }
     setBody("");
   }
