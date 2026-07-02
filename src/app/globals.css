@@ -1428,6 +1428,20 @@ section {
   align-self: flex-start;
   background: var(--paper);
 }
+/* In the admin panel, flip alignment so the admin's own replies sit on
+   the right and the visitor's messages sit on the left. */
+.chat-messages--admin .chat-bubble--admin {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.chat-messages--admin .chat-bubble--visitor {
+  align-self: flex-start;
+  background: var(--paper);
+  color: inherit;
+  border-color: var(--rule);
+}
 .chat-form { display: flex; gap: 8px; }
 .chat-form .chat-input { margin-bottom: 0; }
 .chat-form .chat-send-btn { width: auto; white-space: nowrap; }
