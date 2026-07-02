@@ -62,7 +62,8 @@ create table if not exists design_sizes (
   sort_order integer not null default 0
 );
 
--- RLS: open for now (no auth yet, per project notes). Tighten before going to production.
+-- RLS: public read, writes require a logged-in session (the /admin pages
+-- are gated by Supabase Auth via middleware, same pattern as portfolio_items).
 alter table products enable row level security;
 alter table fabrics enable row level security;
 alter table cuts enable row level security;
@@ -77,14 +78,18 @@ create policy "public read bag_sizes" on bag_sizes for select using (true);
 create policy "public read print_methods" on print_methods for select using (true);
 create policy "public read design_sizes" on design_sizes for select using (true);
 
--- TEMPORARY: allow anon write so the /admin page works without auth yet.
--- Remove these four policies once you add admin authentication.
-create policy "temp anon write products" on products for all using (true) with check (true);
-create policy "temp anon write fabrics" on fabrics for all using (true) with check (true);
-create policy "temp anon write cuts" on cuts for all using (true) with check (true);
-create policy "temp anon write bag_sizes" on bag_sizes for all using (true) with check (true);
-create policy "temp anon write print_methods" on print_methods for all using (true) with check (true);
-create policy "temp anon write design_sizes" on design_sizes for all using (true) with check (true);
+create policy "auth write products" on products for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth write fabrics" on fabrics for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth write cuts" on cuts for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth write bag_sizes" on bag_sizes for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth write print_methods" on print_methods for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "auth write design_sizes" on design_sizes for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 
 -- ---------- Seed data (matches current hardcoded calculator values) ----------
 
