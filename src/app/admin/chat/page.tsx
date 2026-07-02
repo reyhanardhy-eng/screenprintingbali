@@ -13,6 +13,7 @@ export default function AdminChatPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [body, setBody] = useState("");
+  const [sendError, setSendError] = useState("");
   const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">(
     "default"
   );
@@ -107,13 +108,22 @@ export default function AdminChatPage() {
     if (!activeId || !body.trim() || !adminUser) return;
     const supabase = createClient();
     const text = body.trim();
-    setBody("");
-    await supabase.from("messages").insert({
+    setSendError("");
+    const { error } = await supabase.from("messages").insert({
       conversation_id: activeId,
       sender: "admin",
       sender_id: adminUser.id,
       body: text,
     });
+    if (error) {
+      setSendError(
+        error.code === "42501" || error.message.toLowerCase().includes("row-level")
+          ? "Gagal kirim: akun ini belum terdaftar sebagai admin (cek tabel `admins` di Supabase)."
+          : `Gagal kirim: ${error.message}`
+      );
+      return;
+    }
+    setBody("");
   }
 
   async function requestNotifications() {
@@ -169,6 +179,11 @@ export default function AdminChatPage() {
                 ))}
                 <div ref={bottomRef} />
               </div>
+              {sendError && (
+                <p className="chat-error" role="alert">
+                  {sendError}
+                </p>
+              )}
               <form onSubmit={sendReply} className="chat-form">
                 <input
                   className="chat-input"
