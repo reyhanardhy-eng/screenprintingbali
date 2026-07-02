@@ -1,11 +1,11 @@
 const FAQS = [
   {
     q: "What's the minimum order?",
-    a: "One piece for DTF, twelve pieces for screen printing. We're flexible at the bottom end: if you want a single tee to test your design before committing to a full drop, that's exactly what DTF is for.",
+    a: "One piece for DTF, twenty-four pieces for screen printing. We're flexible at the bottom end: if you want a single tee to test your design before committing to a full drop, that's exactly what DTF is for.",
   },
   {
     q: "How long does it take?",
-    a: "DTF: 1–3 days. Screen print: 7–10 days from approved artwork. Brand Starter projects with full design and finishing: 2–4 weeks. We give you a real timeline up front, not a hopeful one.",
+    a: "DTF: 1–3 days. Screen print: 7–10 days from approved artwork. Brand Starter projects with full design and finishing: 2–4 weeks. Timelines can be discussed if you're working against a launch date, just tell us upfront.",
   },
   {
     q: "Can you help with the design?",
@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: "How much deposit do you take?",
-    a: "50% to start production, balance on delivery. Brand Starter projects sometimes split into three: deposit, design approval, delivery. Bank transfer or international payment, and we'll send the details with the quote.",
+    a: "50% to start production, balance on delivery, for every project including Brand Starter. Prefer to pay it all upfront instead? That works too. Bank transfer or international payment, and we'll send the details with the quote.",
   },
   {
     q: "Do you ship outside Bali?",
