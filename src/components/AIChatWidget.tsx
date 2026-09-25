@@ -52,7 +52,8 @@ export default function AIChatWidget() {
       });
       const result = await response.json() as { reply?: string; error?: string };
       if (!response.ok || !result.reply) throw new Error(result.error || "Chat sedang tidak tersedia.");
-      setMessages([...nextMessages, { role: "assistant", content: result.reply }].slice(-12));
+      const assistantMessage: ChatMessage = { role: "assistant", content: result.reply };
+      setMessages([...nextMessages, assistantMessage].slice(-12));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Chat sedang tidak tersedia.");
     } finally {
