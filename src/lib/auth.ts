@@ -81,7 +81,7 @@ export async function getPrincipal(includePending = false): Promise<Principal | 
     [sha256(token)]
   );
   const session = found[0];
-  if (!session) return null;
+  if (!session || session.role !== "admin") return null;
 
   if (!includePending && session.auth_level !== "full") return null;
 
@@ -131,4 +131,3 @@ export async function revokeCurrentSession(): Promise<void> {
 export async function revokeAllSessions(userId: string): Promise<void> {
   await run("DELETE FROM sessions WHERE user_id = ?", [userId]);
 }
-

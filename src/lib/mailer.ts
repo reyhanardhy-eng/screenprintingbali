@@ -25,18 +25,8 @@ function fromAddress(): string {
   return from;
 }
 
-export async function sendVerificationEmail(email: string, token: string) {
-  const link = publicAppUrl(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
-  await transport().sendMail({
-    from: fromAddress(),
-    to: email,
-    subject: "Verify your Screenprinting Bali account",
-    text: `Verify your email by opening this one-time link: ${link}\nThis link expires in 30 minutes.`,
-  });
-}
-
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const link = publicAppUrl(`/auth/reset-password?token=${encodeURIComponent(token)}`);
+  const link = publicAppUrl(`/admin/reset-password?token=${encodeURIComponent(token)}`);
   await transport().sendMail({
     from: fromAddress(),
     to: email,

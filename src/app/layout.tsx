@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ChatWidgetGate from "@/components/ChatWidgetGate";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
@@ -95,7 +94,6 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
-        <ChatWidgetGate />
       </body>
     </html>
   );

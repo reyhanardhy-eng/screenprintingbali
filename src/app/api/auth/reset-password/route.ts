@@ -22,9 +22,10 @@ export async function POST(request: NextRequest) {
     await connection.beginTransaction();
     const tokenHash = sha256(parsed.data.token);
     const [found] = await connection.execute(
-      `SELECT id, user_id FROM auth_tokens
-       WHERE token_hash = ? AND purpose = 'password_reset' AND consumed_at IS NULL
-         AND expires_at > UTC_TIMESTAMP() LIMIT 1 FOR UPDATE`,
+      `SELECT auth_tokens.id, auth_tokens.user_id FROM auth_tokens
+       INNER JOIN users ON users.id = auth_tokens.user_id AND users.role = 'admin' AND users.disabled_at IS NULL
+       WHERE auth_tokens.token_hash = ? AND auth_tokens.purpose = 'password_reset' AND auth_tokens.consumed_at IS NULL
+         AND auth_tokens.expires_at > UTC_TIMESTAMP() LIMIT 1 FOR UPDATE`,
       [tokenHash]
     );
     const tokenRows = found as Array<{ id: string; user_id: string }>;
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
     await connection.execute("UPDATE auth_tokens SET consumed_at = UTC_TIMESTAMP() WHERE id = ?", [tokenRows[0].id]);
     await connection.execute(
-      "UPDATE users SET password_hash = ?, email_verified_at = COALESCE(email_verified_at, UTC_TIMESTAMP()) WHERE id = ? AND disabled_at IS NULL",
+      "UPDATE users SET password_hash = ? WHERE id = ? AND role = 'admin' AND disabled_at IS NULL",
       [await hashPassword(parsed.data.password), tokenRows[0].user_id]
     );
     await connection.execute("DELETE FROM sessions WHERE user_id = ?", [tokenRows[0].user_id]);

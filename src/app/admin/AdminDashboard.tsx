@@ -62,9 +62,6 @@ export default function AdminPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <h1>Pricing admin</h1>
         <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
-          <a href="/admin/chat" className="admin-sub" style={{ textDecoration: "underline" }}>
-            Live chat →
-          </a>
           <button className="admin-save-btn" onClick={handleSignOut}>
             Sign out
           </button>

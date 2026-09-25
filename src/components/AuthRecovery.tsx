@@ -24,8 +24,8 @@ export function ForgotPasswordForm() {
   }
 
   return <div className="admin-page auth-card">
-    <h1>Reset password</h1>
-    <p className="admin-sub">Enter the account email. If it matches, we’ll send a one-time reset link.</p>
+    <h1>Admin password recovery</h1>
+    <p className="admin-sub">Masukkan email admin. Jika cocok, tautan pemulihan sekali pakai akan dikirim.</p>
     {message && <p className="admin-status" role="status">{message}</p>}
     {error && <p className="admin-status" role="alert">{error}</p>}
     <form onSubmit={submit}>

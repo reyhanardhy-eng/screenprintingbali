@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(generic, { status: 202 });
   }
   const users = await rows<RowDataPacket & { id: string }>(
-    "SELECT id FROM users WHERE email = ? AND disabled_at IS NULL LIMIT 1", [email]
+    "SELECT id FROM users WHERE email = ? AND role = 'admin' AND disabled_at IS NULL LIMIT 1", [email]
   );
   if (users[0]) {
     try {
@@ -35,4 +35,3 @@ export async function POST(request: NextRequest) {
   }
   return NextResponse.json(generic, { status: 202 });
 }
-

@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
         <PasswordInput value={password} onChange={setPassword} required autoComplete="current-password" />
       </div>
       <button type="submit" className="admin-save-btn" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</button>
-      <a className="auth-link" href="/auth/forgot-password">Forgot password?</a>
+      <a className="auth-link" href="/admin/forgot-password">Lupa password?</a>
       <a className="auth-link" href="/admin/setup">Set up the first admin account</a>
     </form> : <form onSubmit={submitCode}>
       <div className="auth-field">

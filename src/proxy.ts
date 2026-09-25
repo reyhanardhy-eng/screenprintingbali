@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_ADMIN_PATHS = new Set([
   "/admin/login",
   "/admin/setup",
+  "/admin/forgot-password",
   "/admin/reset-password",
 ]);
 

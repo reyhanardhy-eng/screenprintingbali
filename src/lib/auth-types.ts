@@ -1,4 +1,4 @@
-export type AppRole = "customer" | "admin";
+export type AppRole = "admin";
 
 export type PublicUser = {
   id: string;
@@ -6,6 +6,4 @@ export type PublicUser = {
   full_name: string | null;
   role: AppRole;
 };
-
-export type ChatPrincipal = PublicUser;
 
