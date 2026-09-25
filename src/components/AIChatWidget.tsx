@@ -119,7 +119,6 @@ export default function AIChatWidget() {
             </div>
           ))}
           {loadingHistory && <p className="chat-sub" role="status">Memuat riwayat chat…</p>}
-          {sending && <p className="chat-sub" role="status">Thinking…</p>}
           <div ref={bottomRef} />
         </div>
         {error && <p className="chat-error" role="alert">{error}</p>}
