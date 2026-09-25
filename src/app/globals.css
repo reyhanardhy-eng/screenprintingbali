@@ -1369,6 +1369,20 @@ section {
   padding: 20px;
   overflow: hidden;
 }
+.chat-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.chat-panel__close {
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
 .chat-title {
   font-family: var(--font-display);
   font-size: 18px;
@@ -1490,6 +1504,25 @@ section {
 .chat-bubble--admin {
   align-self: flex-start;
   background: var(--paper);
+}
+.chat-bubble--assistant {
+  align-self: flex-start;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--paper);
+}
+.chat-privacy-note {
+  color: var(--ink-faint);
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0 0 8px;
+}
+.chat-whatsapp-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-decoration: underline;
 }
 /* In the admin panel, flip alignment so the admin's own replies sit on
    the right and the visitor's messages sit on the left. */

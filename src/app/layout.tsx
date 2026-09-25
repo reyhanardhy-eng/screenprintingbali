@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AIChatWidget from "@/components/AIChatWidget";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
@@ -94,6 +95,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <AIChatWidget />
       </body>
     </html>
   );
