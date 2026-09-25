@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DEFAULT_LIVECHAT_WIDGET } from "@/lib/livechat-shared";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant" | "admin"; content: string };
 type WidgetSettings = {
   title: string;
   subtitle: string;
@@ -25,7 +25,9 @@ export default function AIChatWidget() {
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [humanMode, setHumanMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) return;
@@ -53,9 +55,12 @@ export default function AIChatWidget() {
     setError("");
     fetch("/api/livechat?history=1", { cache: "no-store" })
       .then(async (response) => {
-        const result = await response.json() as { messages?: ChatMessage[]; error?: string };
+        const result = await response.json() as { messages?: ChatMessage[]; humanMode?: boolean; error?: string };
         if (!response.ok) throw new Error(result.error || "Chat history could not be loaded.");
-        if (active) setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
+        if (active) {
+          setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
+          setHumanMode(result.humanMode === true);
+        }
       })
       .catch((cause) => {
         if (active) setError(cause instanceof Error ? cause.message : "Chat history could not be loaded.");
@@ -64,6 +69,28 @@ export default function AIChatWidget() {
         if (active) setLoadingHistory(false);
       });
     return () => { active = false; };
+  }, [open, pathname]);
+
+  useEffect(() => {
+    if (!open || pathname.startsWith("/admin")) return;
+    let active = true;
+    const refresh = async () => {
+      if (sendingRef.current) return;
+      try {
+        const response = await fetch("/api/livechat?history=1", { cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json() as { messages?: ChatMessage[]; humanMode?: boolean };
+        if (active) {
+          setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
+          setHumanMode(result.humanMode === true);
+        }
+      } catch { /* Keep the current conversation visible while the network reconnects. */ }
+    };
+    const interval = window.setInterval(() => { void refresh(); }, 4000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
   }, [open, pathname]);
 
   useEffect(() => {
@@ -81,20 +108,27 @@ export default function AIChatWidget() {
     setDraft("");
     setError("");
     setSending(true);
+    sendingRef.current = true;
     try {
       const response = await fetch("/api/livechat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: content }),
       });
-      const result = await response.json() as { reply?: string; error?: string };
-      if (!response.ok || !result.reply) throw new Error(result.error || "Chat is temporarily unavailable.");
+      const result = await response.json() as { reply?: string; handoff?: boolean; error?: string };
+      if (!response.ok) throw new Error(result.error || "Chat is temporarily unavailable.");
+      if (result.handoff) {
+        setHumanMode(true);
+        return;
+      }
+      if (!result.reply) throw new Error("Chat is temporarily unavailable.");
       const assistantMessage: ChatMessage = { role: "assistant", content: result.reply };
       setMessages([...nextMessages, assistantMessage].slice(-12));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Chat is temporarily unavailable.");
     } finally {
       setSending(false);
+      sendingRef.current = false;
     }
   }
 
@@ -119,6 +153,7 @@ export default function AIChatWidget() {
             </div>
           ))}
           {loadingHistory && <p className="chat-sub" role="status">Loading chat history…</p>}
+          {humanMode && <p className="chat-sub chat-human-notice" role="status">A team member has joined. You can keep replying here.</p>}
           <div ref={bottomRef} />
         </div>
         {error && <p className="chat-error" role="alert">{error}</p>}

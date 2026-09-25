@@ -9,9 +9,12 @@ import { assertSameOrigin, checkRateLimit, clientAddress, sha256 } from "@/lib/s
 import {
   getLivechatHistory,
   getOrCreateLivechatSession,
+  isLivechatHumanMode,
   LIVECHAT_COOKIE_MAX_AGE,
   LIVECHAT_COOKIE_NAME,
+  saveLivechatVisitorMessage,
   saveLivechatExchange,
+  type StoredChatMessage,
 } from "@/lib/livechat-history";
 
 export const dynamic = "force-dynamic";
@@ -86,7 +89,7 @@ function cleanAssistantReply(value: string): string {
     .slice(0, 5000);
 }
 
-function cleanAssistantHistory(messages: Array<{ role: "user" | "assistant"; content: string }>) {
+function cleanAssistantHistory(messages: StoredChatMessage[]) {
   return messages.flatMap((message) => {
     if (message.role !== "assistant") return [message];
     const content = cleanAssistantReply(message.content);
@@ -122,8 +125,9 @@ export async function GET(request: NextRequest) {
 
     const session = await getOrCreateLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
     const messages = cleanAssistantHistory(await getLivechatHistory(session.id));
+    const humanMode = await isLivechatHumanMode(session.id);
     const response = NextResponse.json(
-      { ...settings, messages },
+      { ...settings, messages, humanMode },
       { headers: { "Cache-Control": "no-store" } }
     );
     setSessionCookie(response, session.token);
@@ -146,14 +150,6 @@ export async function POST(request: NextRequest) {
     return responseError("Request rejected.", 403);
   }
 
-  let config;
-  try {
-    config = await getLivechatRuntimeConfig();
-  } catch {
-    return responseError("The AI chat is unavailable. Please contact us on WhatsApp.", 503);
-  }
-  if (!config.enabled || !config.apiKey) return responseError("The AI chat is not configured yet.", 503);
-
   let body: unknown;
   try {
     body = await request.json();
@@ -171,6 +167,22 @@ export async function POST(request: NextRequest) {
     if (!allowed) return responseError("You have sent too many messages. Please try again in a few minutes.", 429);
 
     const session = await getOrCreateLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
+    if (await isLivechatHumanMode(session.id)) {
+      await saveLivechatVisitorMessage(session.id, parsed.data.message);
+      const response = NextResponse.json(
+        { handoff: true },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+      setSessionCookie(response, session.token);
+      return response;
+    }
+    let config;
+    try {
+      config = await getLivechatRuntimeConfig();
+    } catch {
+      return responseError("The AI chat is unavailable. Please contact us on WhatsApp.", 503);
+    }
+    if (!config.enabled || !config.apiKey) return responseError("The AI chat is not configured yet.", 503);
     const history = cleanAssistantHistory(await getLivechatHistory(session.id));
     const upstream = await fetch("https://api.zrouter.dev/v1/chat/completions", {
       method: "POST",
@@ -182,7 +194,10 @@ export async function POST(request: NextRequest) {
         model: config.model,
         messages: [
           { role: "system", content: `${config.systemPrompt}\n\n${LIVECHAT_RESPONSE_STYLE_RULES}\n\n${LIVECHAT_SAFETY_RULES}` },
-          ...history,
+          ...history.map((message) => ({
+            role: message.role === "user" ? "user" as const : "assistant" as const,
+            content: message.content,
+          })),
           { role: "user", content: parsed.data.message },
         ],
         max_tokens: 400,
@@ -217,9 +232,9 @@ export async function POST(request: NextRequest) {
     if (!cleanReply) {
       return responseError("Chat could not generate a reply. Please contact us on WhatsApp.", 502);
     }
-    await saveLivechatExchange(session.id, parsed.data.message, cleanReply);
+    const handedToAdmin = await saveLivechatExchange(session.id, parsed.data.message, cleanReply);
     const response = NextResponse.json(
-      { reply: cleanReply },
+      handedToAdmin ? { handoff: true } : { reply: cleanReply },
       { headers: { "Cache-Control": "no-store" } }
     );
     setSessionCookie(response, session.token);

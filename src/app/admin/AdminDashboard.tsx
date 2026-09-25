@@ -12,6 +12,7 @@ import {
   type Product,
 } from "@/lib/pricing-types";
 import type { PortfolioItem } from "@/lib/portfolio-types";
+import LivechatInbox from "./LivechatInbox";
 import LivechatSettings from "./LivechatSettings";
 
 export default function AdminPage() {
@@ -74,6 +75,7 @@ export default function AdminPage() {
       <nav className="admin-nav" aria-label="Admin settings sections">
         <a href="#pricing-settings">Price calculator</a>
         <a href="#portfolio-settings">Portfolio</a>
+        <a href="#chat-inbox">Live chat inbox</a>
         <a href="#chatbot-settings">AI chatbot &amp; API</a>
       </nav>
 
@@ -112,6 +114,7 @@ export default function AdminPage() {
       </div>
 
       <PortfolioManager flash={flash} />
+      <LivechatInbox flash={flash} />
       <LivechatSettings flash={flash} />
     </div>
   );
