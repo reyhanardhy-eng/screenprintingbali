@@ -61,7 +61,7 @@ export default function AdminPage() {
   return (
     <div className="admin-page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <h1>Pricing admin</h1>
+        <h1>Website admin</h1>
         <div style={{ display: "flex", gap: 16, alignItems: "baseline" }}>
           <button className="admin-save-btn" onClick={handleSignOut}>
             Sign out
