@@ -20,10 +20,10 @@ export default function LivechatSettings({ flash }: Props) {
     fetch("/api/admin/livechat", { cache: "no-store" })
       .then(async (response) => {
         const result = await response.json() as LivechatAdminSettings & { error?: string };
-        if (!response.ok) throw new Error(result.error || "Pengaturan chatbot gagal dimuat.");
+        if (!response.ok) throw new Error(result.error || "Could not load chatbot settings.");
         setSettings(result);
       })
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Pengaturan chatbot gagal dimuat."))
+      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load chatbot settings."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -59,48 +59,48 @@ export default function LivechatSettings({ flash }: Props) {
         error?: string;
       };
       if (!response.ok || !result.settings) {
-        throw new Error(result.error || "Pengaturan chatbot gagal disimpan.");
+        throw new Error(result.error || "Could not save chatbot settings.");
       }
       setSettings(result.settings);
       setApiKey("");
-      flash("Pengaturan chatbot tersimpan.");
+      flash("Chatbot settings saved.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Pengaturan chatbot gagal disimpan.");
+      setError(cause instanceof Error ? cause.message : "Could not save chatbot settings.");
     } finally {
       setSaving(false);
     }
   }
 
   if (loading) {
-    return <section id="chatbot-settings" className="admin-settings-section"><p className="admin-sub">Memuat pengaturan chatbot…</p></section>;
+    return <section id="chatbot-settings" className="admin-settings-section"><p className="admin-sub">Loading chatbot settings…</p></section>;
   }
 
   if (!settings) {
     return (
       <section id="chatbot-settings" className="admin-settings-section">
-        <h2>Bot AI &amp; API</h2>
-        <p className="admin-settings-error" role="alert">{error || "Pengaturan belum tersedia."}</p>
-        <p className="admin-settings-help">Pastikan database Hostinger terhubung dan aplikasi memiliki akses ke tabel pengaturan.</p>
+        <h2>AI chatbot &amp; API</h2>
+        <p className="admin-settings-error" role="alert">{error || "Settings are unavailable."}</p>
+        <p className="admin-settings-help">Make sure the Hostinger database is connected and the app can access its settings table.</p>
       </section>
     );
   }
 
   const keySourceLabel = settings.apiKeySource === "database"
-    ? "Tersimpan terenkripsi di database Hostinger"
+    ? "Stored encrypted in the Hostinger database"
     : settings.apiKeySource === "environment"
-      ? "Menggunakan variabel Hostinger ZROUTER_API_KEY"
-      : "API key dinonaktifkan";
+      ? "Using the Hostinger ZROUTER_API_KEY environment variable"
+      : "API key is disabled";
 
   return (
     <section id="chatbot-settings" className="admin-settings-section">
       <div className="admin-settings-heading">
         <div>
-          <span className="eyebrow">Integrasi &amp; konten</span>
-          <h2>Bot AI &amp; API</h2>
-          <p className="admin-settings-help">Atur koneksi ZRouter, perilaku bot, teks widget, dan tautan WhatsApp. Perubahan langsung dipakai website.</p>
+          <span className="eyebrow">Integrations &amp; content</span>
+          <h2>AI chatbot &amp; API</h2>
+          <p className="admin-settings-help">Configure ZRouter, bot behavior, chat widget text, and the WhatsApp link. Changes apply to the website immediately.</p>
         </div>
         <span className={`admin-settings-pill${settings.enabled && settings.apiKeyConfigured ? " is-on" : ""}`}>
-          {settings.enabled && settings.apiKeyConfigured ? "Bot aktif" : "Bot nonaktif"}
+          {settings.enabled && settings.apiKeyConfigured ? "Bot active" : "Bot inactive"}
         </span>
       </div>
 
@@ -116,14 +116,14 @@ export default function LivechatSettings({ flash }: Props) {
                 checked={settings.enabled}
                 onChange={(event) => update({ enabled: event.target.checked })}
               />
-              <span>Aktifkan chatbot publik</span>
+              <span>Enable the public chatbot</span>
             </label>
           </div>
 
           <label className="admin-settings-field">
-            <span>Provider dan endpoint</span>
+            <span>Provider and endpoint</span>
             <input value="ZRouter · https://api.zrouter.dev/v1/chat/completions" readOnly />
-            <small>Endpoint dikunci di server untuk mencegah penyalahgunaan koneksi. API key tidak pernah dikirim ke pengunjung.</small>
+            <small>The endpoint is fixed on the server to prevent misuse. The API key is never sent to visitors.</small>
           </label>
 
           <label className="admin-settings-field">
@@ -139,7 +139,7 @@ export default function LivechatSettings({ flash }: Props) {
           </label>
 
           <label className="admin-settings-field">
-            <span>Sumber API key</span>
+            <span>API key source</span>
             <select
               value={settings.apiKeySource}
               onChange={(event) => {
@@ -147,15 +147,15 @@ export default function LivechatSettings({ flash }: Props) {
                 update({ apiKeySource, ...(apiKeySource === "disabled" ? { enabled: false } : {}) });
               }}
             >
-              <option value="environment">Variabel Hostinger</option>
-              <option value="database">Simpan key baru secara terenkripsi</option>
-              <option value="disabled">Nonaktifkan API key</option>
+              <option value="environment">Hostinger environment variable</option>
+              <option value="database">Store a new key encrypted in the database</option>
+              <option value="disabled">Disable the API key</option>
             </select>
-            <small>{keySourceLabel}. Nilai rahasia hanya ditampilkan sebagai status dan tidak dapat dibaca kembali dari panel.</small>
+            <small>{keySourceLabel}. Secret values are shown as a status only and cannot be read back from this panel.</small>
           </label>
 
           <label className="admin-settings-field">
-            <span>API key baru <em>(opsional)</em></span>
+            <span>New API key <em>(optional)</em></span>
             <input
               type="password"
               value={apiKey}
@@ -163,16 +163,16 @@ export default function LivechatSettings({ flash }: Props) {
               maxLength={500}
               autoComplete="off"
               spellCheck={false}
-              placeholder={settings.apiKeyConfigured ? "Kosongkan untuk mempertahankan key sekarang" : "Tempel API key ZRouter"}
+              placeholder={settings.apiKeyConfigured ? "Leave blank to keep the current key" : "Paste the ZRouter API key"}
             />
-            <small>Key baru dienkripsi sebelum disimpan. Kolom ini kosong setelah penyimpanan dan key tidak masuk log.</small>
+            <small>New keys are encrypted before storage. This field clears after saving, and keys are never written to logs.</small>
           </label>
         </div>
 
         <div className="admin-settings-card">
-          <h3>Perilaku bot</h3>
+          <h3>Bot behavior</h3>
           <label className="admin-settings-field">
-            <span>Instruksi bot</span>
+            <span>Bot instructions</span>
             <textarea
               value={settings.systemPrompt}
               onChange={(event) => update({ systemPrompt: event.target.value.slice(0, 8000) })}
@@ -180,34 +180,34 @@ export default function LivechatSettings({ flash }: Props) {
               rows={9}
               required
             />
-            <small>Aturan keamanan bawaan tetap dijalankan terpisah dari instruksi yang diedit di sini.</small>
+            <small>Built-in safety rules remain active separately from the instructions edited here.</small>
           </label>
         </div>
 
         <div className="admin-settings-card">
-          <h3>Tampilan chatbot</h3>
+          <h3>Chat widget appearance</h3>
           <label className="admin-settings-field">
-            <span>Judul</span>
+            <span>Title</span>
             <input value={settings.title} onChange={(event) => update({ title: event.target.value })} maxLength={120} required />
           </label>
           <label className="admin-settings-field">
-            <span>Subjudul</span>
+            <span>Subtitle</span>
             <input value={settings.subtitle} onChange={(event) => update({ subtitle: event.target.value })} maxLength={240} />
           </label>
           <label className="admin-settings-field">
-            <span>Pesan pembuka</span>
+            <span>Welcome message</span>
             <input value={settings.welcome} onChange={(event) => update({ welcome: event.target.value })} maxLength={300} />
           </label>
           <label className="admin-settings-field">
-            <span>Catatan privasi</span>
+            <span>Privacy notice</span>
             <input value={settings.privacyNote} onChange={(event) => update({ privacyNote: event.target.value })} maxLength={300} />
           </label>
           <label className="admin-settings-field">
-            <span>Teks tombol chat</span>
+            <span>Chat button label</span>
             <input value={settings.buttonLabel} onChange={(event) => update({ buttonLabel: event.target.value })} maxLength={50} required />
           </label>
           <label className="admin-settings-field">
-            <span>Tautan WhatsApp</span>
+            <span>WhatsApp link</span>
             <input
               type="url"
               value={settings.whatsappUrl}
@@ -215,14 +215,14 @@ export default function LivechatSettings({ flash }: Props) {
               maxLength={500}
               required
             />
-            <small>Gunakan tautan aman berformat https://wa.me/nomor-internasional.</small>
+            <small>Use a secure link in the format https://wa.me/international-number.</small>
           </label>
         </div>
 
         <div className="admin-settings-actions">
           {error && <p className="admin-settings-error" role="alert">{error}</p>}
           <button type="submit" className="admin-save-btn" disabled={saving}>
-            {saving ? "Menyimpan…" : "Simpan pengaturan chatbot"}
+            {saving ? "Saving…" : "Save chatbot settings"}
           </button>
         </div>
       </form>

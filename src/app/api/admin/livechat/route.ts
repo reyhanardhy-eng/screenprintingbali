@@ -61,7 +61,7 @@ export async function GET() {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
-    return responseError("Pengaturan chatbot belum dapat dimuat. Periksa koneksi database dan MFA_ENCRYPTION_KEY.", 503);
+    return responseError("Chatbot settings could not be loaded. Check the database connection and MFA_ENCRYPTION_KEY.", 503);
   }
 }
 
@@ -73,15 +73,15 @@ export async function PUT(request: NextRequest) {
   const { user, response } = await adminApiResponse();
   if (response || !user) return response;
   if (!(await checkRateLimit(`admin-livechat-settings:${user.id}`, 12, 60))) {
-    return responseError("Terlalu banyak perubahan. Coba lagi sebentar.", 429);
+    return responseError("Too many changes. Please try again shortly.", 429);
   }
 
   let body: unknown;
   try { body = await request.json(); } catch {
-    return responseError("Pengaturan tidak valid.", 400);
+    return responseError("Invalid settings.", 400);
   }
   const parsed = settingsSchema.safeParse(body);
-  if (!parsed.success) return responseError("Periksa kembali nilai pengaturan chatbot.", 400);
+  if (!parsed.success) return responseError("Please check the chatbot settings and try again.", 400);
 
   const input = parsed.data;
   const newApiKey = input.apiKey?.trim() || "";
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
       apiKeyEnc = encryptLivechatApiKey(newApiKey);
     } else if (apiKeySource === "database") {
       if (existing[0]?.api_key_source !== "database" || !apiKeyEnc) {
-        return responseError("Masukkan API key baru sebelum memilih penyimpanan terenkripsi.", 400);
+        return responseError("Enter a new API key before choosing encrypted database storage.", 400);
       }
     } else {
       apiKeyEnc = null;
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
         ? Boolean(process.env.ZROUTER_API_KEY?.trim())
         : false;
     if (input.enabled && !apiKeyAvailable) {
-      return responseError("Chatbot tidak bisa diaktifkan sebelum API key tersedia.", 400);
+      return responseError("Add an API key before enabling the chatbot.", 400);
     }
 
     connection = await getDb().getConnection();
@@ -172,7 +172,7 @@ export async function PUT(request: NextRequest) {
     if (connection) {
       try { await connection.rollback(); } catch { /* Connection may already be closed. */ }
     }
-    return responseError("Pengaturan chatbot gagal disimpan.", 500);
+    return responseError("Chatbot settings could not be saved.", 500);
   } finally {
     connection?.release();
   }

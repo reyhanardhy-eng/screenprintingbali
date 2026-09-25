@@ -4,6 +4,7 @@ import type { RowDataPacket } from "mysql2/promise";
 import { getDb, rows } from "@/lib/db";
 import {
   DEFAULT_LIVECHAT_WIDGET,
+  LEGACY_DEFAULT_LIVECHAT_PRIVACY_NOTE,
   type LivechatApiKeySource,
 } from "@/lib/livechat-shared";
 import type { LivechatAdminSettings } from "@/lib/livechat-shared";
@@ -55,7 +56,7 @@ export async function ensureLivechatSettingsTable(): Promise<void> {
       chat_title VARCHAR(120) NOT NULL DEFAULT 'Ask our AI assistant',
       chat_subtitle VARCHAR(240) NOT NULL DEFAULT 'For exact quotes, we’ll connect you with the team on WhatsApp.',
       chat_welcome VARCHAR(300) NOT NULL DEFAULT 'Ask about printing methods, minimums, and how to get started.',
-      chat_privacy_note VARCHAR(300) NOT NULL DEFAULT 'Pesan dikirim ke layanan AI untuk dijawab. Jangan kirim password atau detail pembayaran.',
+      chat_privacy_note VARCHAR(300) NOT NULL DEFAULT 'Messages are sent to our AI assistant. Do not share passwords or payment details.',
       chat_button_label VARCHAR(50) NOT NULL DEFAULT 'Chat with us',
       whatsapp_url VARCHAR(500) NOT NULL DEFAULT 'https://wa.me/6283174145415?text=Hi%2C%20I%27d%20like%20to%20ask%20about%20a%20print%20order',
       updated_by CHAR(36) NULL,
@@ -156,7 +157,9 @@ export async function getLivechatRuntimeConfig(): Promise<LivechatRuntimeConfig>
     title: row.chat_title,
     subtitle: row.chat_subtitle,
     welcome: row.chat_welcome,
-    privacyNote: row.chat_privacy_note,
+    privacyNote: row.chat_privacy_note === LEGACY_DEFAULT_LIVECHAT_PRIVACY_NOTE
+      ? DEFAULT_LIVECHAT_WIDGET.privacyNote
+      : row.chat_privacy_note,
     buttonLabel: row.chat_button_label,
     whatsappUrl: safeWhatsAppUrl(row.whatsapp_url),
   };

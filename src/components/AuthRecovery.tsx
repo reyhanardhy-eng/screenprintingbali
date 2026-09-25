@@ -25,7 +25,7 @@ export function ForgotPasswordForm() {
 
   return <div className="admin-page auth-card">
     <h1>Admin password recovery</h1>
-    <p className="admin-sub">Masukkan email admin. Jika cocok, tautan pemulihan sekali pakai akan dikirim.</p>
+    <p className="admin-sub">Enter your admin email. If it matches an account, we’ll send a one-time recovery link.</p>
     {message && <p className="admin-status" role="status">{message}</p>}
     {error && <p className="admin-status" role="alert">{error}</p>}
     <form onSubmit={submit}>

@@ -26,7 +26,7 @@ export default function AdminPage() {
         return response.json() as Promise<PricingData>;
       })
       .then(setData)
-      .catch(() => flash("Gagal memuat data. Coba masuk ulang."));
+      .catch(() => flash("Could not load the data. Please sign in again."));
   }, []);
 
   function flash(msg: string) {
@@ -40,7 +40,7 @@ export default function AdminPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(rows),
     });
-    flash(response.ok ? `Saved ${table}.` : `Gagal menyimpan ${table}.`);
+    flash(response.ok ? `Saved ${table}.` : `Could not save ${table}.`);
   }
 
   async function handleSignOut() {
@@ -68,13 +68,13 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
-      <p className="admin-sub">Kelola kalkulator, portofolio, dan bot website dari satu panel Hostinger.</p>
+      <p className="admin-sub">Manage the price calculator, portfolio, and website chatbot from one Hostinger panel.</p>
       {status && <p className="admin-status">{status}</p>}
 
-      <nav className="admin-nav" aria-label="Bagian pengaturan admin">
-        <a href="#pricing-settings">Kalkulator</a>
-        <a href="#portfolio-settings">Portofolio</a>
-        <a href="#chatbot-settings">Bot AI &amp; API</a>
+      <nav className="admin-nav" aria-label="Admin settings sections">
+        <a href="#pricing-settings">Price calculator</a>
+        <a href="#portfolio-settings">Portfolio</a>
+        <a href="#chatbot-settings">AI chatbot &amp; API</a>
       </nav>
 
       <div id="pricing-settings" className="admin-settings-group">
@@ -143,7 +143,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
       body: JSON.stringify(row),
     });
     if (!response.ok) {
-      flash("Gagal menyimpan portfolio.");
+      flash("Could not save the portfolio item.");
       return null;
     }
     return (await response.json()) as PortfolioItem;
@@ -159,7 +159,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     const uploaded = upload.ok ? (await upload.json()) as { image_url: string } : null;
 
     if (!uploaded) {
-      flash("Gagal upload foto. Pastikan file adalah JPG, PNG, atau WebP maksimal 5 MB.");
+      flash("Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
       setBusyId(null);
       return;
     }
@@ -168,7 +168,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     if (saved) {
       const refreshed = await fetch("/api/admin/portfolio", { cache: "no-store" }).then((res) => res.json() as Promise<PortfolioItem[]>);
       setItems(refreshed);
-      flash("Foto tersimpan dan langsung tampil di website.");
+      flash("Image saved and published to the website.");
     }
     setBusyId(null);
   }
@@ -181,7 +181,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     if (saved) {
       const refreshed = await fetch("/api/admin/portfolio", { cache: "no-store" }).then((res) => res.json() as Promise<PortfolioItem[]>);
       setItems(refreshed);
-      flash("Keterangan tersimpan dan langsung tampil di website.");
+      flash("Caption saved and published to the website.");
     }
     setBusyId(null);
   }
@@ -197,7 +197,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
       body: JSON.stringify({ id: row.id }),
     });
     if (!response.ok) {
-      flash("Gagal menghapus portfolio.");
+      flash("Could not delete the portfolio item.");
       return;
     }
     setItems((items ?? []).filter((r) => r.id !== row.id));
@@ -216,13 +216,13 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   }
 
   if (!items) {
-    return <p className="admin-sub">Memuat portfolio…</p>;
+    return <p className="admin-sub">Loading portfolio…</p>;
   }
 
   return (
     <div id="portfolio-settings" className="portfolio-manager">
       <p className="admin-sub" style={{ marginTop: -24 }}>
-        Foto yang muncul di bagian &quot;Some things we&apos;ve printed&quot; di halaman utama.
+        Images shown in the “Some things we&apos;ve printed” section on the homepage.
       </p>
       <div className="portfolio-grid">
         {items.map((r, i) => (
@@ -231,11 +231,11 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               {r.image_url ? (
                 <img src={r.image_url} alt="" />
               ) : (
-                <span className="portfolio-card__placeholder">Belum ada foto</span>
+                <span className="portfolio-card__placeholder">No image uploaded</span>
               )}
             </div>
             <label className="portfolio-card__upload">
-              {busyId === r.id ? "Menyimpan…" : r.image_url ? "Ganti foto" : "Upload foto"}
+              {busyId === r.id ? "Saving…" : r.image_url ? "Replace image" : "Upload image"}
               <input
                 type="file"
                 accept="image/*"
@@ -249,7 +249,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
             </label>
             <input
               className="portfolio-card__caption"
-              placeholder="Keterangan singkat, mis. Brand drop · 36 pcs · Plastisol"
+              placeholder="Short caption, e.g. Brand drop · 36 pcs · Plastisol"
               value={r.meta}
               onChange={(e) => update(i, { meta: e.target.value })}
             />
@@ -259,19 +259,19 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               disabled={busyId !== null}
               onClick={() => handleCaptionSave(i)}
             >
-              {busyId === r.id ? "Menyimpan…" : "Simpan"}
+              {busyId === r.id ? "Saving…" : "Save caption"}
             </button>
             <button
               type="button"
               className="portfolio-card__delete"
               onClick={() => handleDelete(r)}
             >
-              Hapus
+              Delete
             </button>
           </div>
         ))}
         <button type="button" className="portfolio-card portfolio-card--add" onClick={addCard}>
-          + Tambah foto
+          + Add image
         </button>
       </div>
     </div>

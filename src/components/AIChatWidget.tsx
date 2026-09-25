@@ -54,11 +54,11 @@ export default function AIChatWidget() {
     fetch("/api/livechat?history=1", { cache: "no-store" })
       .then(async (response) => {
         const result = await response.json() as { messages?: ChatMessage[]; error?: string };
-        if (!response.ok) throw new Error(result.error || "Riwayat chat belum dapat dimuat.");
+        if (!response.ok) throw new Error(result.error || "Chat history could not be loaded.");
         if (active) setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
       })
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Riwayat chat belum dapat dimuat.");
+        if (active) setError(cause instanceof Error ? cause.message : "Chat history could not be loaded.");
       })
       .finally(() => {
         if (active) setLoadingHistory(false);
@@ -88,11 +88,11 @@ export default function AIChatWidget() {
         body: JSON.stringify({ message: content }),
       });
       const result = await response.json() as { reply?: string; error?: string };
-      if (!response.ok || !result.reply) throw new Error(result.error || "Chat sedang tidak tersedia.");
+      if (!response.ok || !result.reply) throw new Error(result.error || "Chat is temporarily unavailable.");
       const assistantMessage: ChatMessage = { role: "assistant", content: result.reply };
       setMessages([...nextMessages, assistantMessage].slice(-12));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Chat sedang tidak tersedia.");
+      setError(cause instanceof Error ? cause.message : "Chat is temporarily unavailable.");
     } finally {
       setSending(false);
     }
@@ -118,7 +118,7 @@ export default function AIChatWidget() {
               {message.content}
             </div>
           ))}
-          {loadingHistory && <p className="chat-sub" role="status">Memuat riwayat chat…</p>}
+          {loadingHistory && <p className="chat-sub" role="status">Loading chat history…</p>}
           <div ref={bottomRef} />
         </div>
         {error && <p className="chat-error" role="alert">{error}</p>}

@@ -1629,6 +1629,12 @@ section {
   overflow-wrap: anywhere;
   background: var(--paper);
 }
+.chat-bubble--user {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
 .chat-privacy-note {
   color: var(--ink-faint);
   font-size: 11px;
