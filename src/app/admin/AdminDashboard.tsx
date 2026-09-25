@@ -12,6 +12,7 @@ import {
   type Product,
 } from "@/lib/pricing-types";
 import type { PortfolioItem } from "@/lib/portfolio-types";
+import LivechatSettings from "./LivechatSettings";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function AdminPage() {
   if (!data) {
     return (
       <div className="admin-page">
-        <h1>Pricing admin</h1>
+        <h1>Website admin</h1>
         <p className="admin-sub">Loading…</p>
       </div>
     );
@@ -67,42 +68,51 @@ export default function AdminPage() {
           </button>
         </div>
       </div>
-      <p className="admin-sub">Edit calculator numbers directly.</p>
+      <p className="admin-sub">Kelola kalkulator, portofolio, dan bot website dari satu panel Hostinger.</p>
       {status && <p className="admin-status">{status}</p>}
 
-      <ProductsTable
-        rows={data.products}
-        onChange={(rows) => setData({ ...data, products: rows })}
-        onSave={(rows) => saveTable("products", rows)}
-      />
-      <FabricsTable
-        rows={data.fabrics}
-        products={data.products}
-        onChange={(rows) => setData({ ...data, fabrics: rows })}
-        onSave={(rows) => saveTable("fabrics", rows)}
-      />
-      <CutsTable
-        rows={data.cuts}
-        onChange={(rows) => setData({ ...data, cuts: rows })}
-        onSave={(rows) => saveTable("cuts", rows)}
-      />
-      <BagSizesTable
-        rows={data.bagSizes}
-        onChange={(rows) => setData({ ...data, bagSizes: rows })}
-        onSave={(rows) => saveTable("bag_sizes", rows)}
-      />
-      <PrintMethodsTable
-        rows={data.printMethods}
-        onChange={(rows) => setData({ ...data, printMethods: rows })}
-        onSave={(rows) => saveTable("print_methods", rows)}
-      />
-      <DesignSizesTable
-        rows={data.designSizes}
-        onChange={(rows) => setData({ ...data, designSizes: rows })}
-        onSave={(rows) => saveTable("design_sizes", rows)}
-      />
+      <nav className="admin-nav" aria-label="Bagian pengaturan admin">
+        <a href="#pricing-settings">Kalkulator</a>
+        <a href="#portfolio-settings">Portofolio</a>
+        <a href="#chatbot-settings">Bot AI &amp; API</a>
+      </nav>
+
+      <div id="pricing-settings" className="admin-settings-group">
+        <ProductsTable
+          rows={data.products}
+          onChange={(rows) => setData({ ...data, products: rows })}
+          onSave={(rows) => saveTable("products", rows)}
+        />
+        <FabricsTable
+          rows={data.fabrics}
+          products={data.products}
+          onChange={(rows) => setData({ ...data, fabrics: rows })}
+          onSave={(rows) => saveTable("fabrics", rows)}
+        />
+        <CutsTable
+          rows={data.cuts}
+          onChange={(rows) => setData({ ...data, cuts: rows })}
+          onSave={(rows) => saveTable("cuts", rows)}
+        />
+        <BagSizesTable
+          rows={data.bagSizes}
+          onChange={(rows) => setData({ ...data, bagSizes: rows })}
+          onSave={(rows) => saveTable("bag_sizes", rows)}
+        />
+        <PrintMethodsTable
+          rows={data.printMethods}
+          onChange={(rows) => setData({ ...data, printMethods: rows })}
+          onSave={(rows) => saveTable("print_methods", rows)}
+        />
+        <DesignSizesTable
+          rows={data.designSizes}
+          onChange={(rows) => setData({ ...data, designSizes: rows })}
+          onSave={(rows) => saveTable("design_sizes", rows)}
+        />
+      </div>
 
       <PortfolioManager flash={flash} />
+      <LivechatSettings flash={flash} />
     </div>
   );
 }
@@ -210,7 +220,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   }
 
   return (
-    <div className="portfolio-manager">
+    <div id="portfolio-settings" className="portfolio-manager">
       <p className="admin-sub" style={{ marginTop: -24 }}>
         Foto yang muncul di bagian &quot;Some things we&apos;ve printed&quot; di halaman utama.
       </p>

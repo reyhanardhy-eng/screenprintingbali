@@ -20,6 +20,12 @@ Hostinger guidance: [deploy a Node.js website](https://www.hostinger.com/support
 6. Temporarily set a strong `ADMIN_BOOTSTRAP_TOKEN`, visit `/admin/setup`, create the admin, then remove the token. Enroll an authenticator and save the recovery codes.
 7. Check signup, verification, password reset, admin MFA, price edits, portfolio upload and chat before production traffic.
 
+## Admin website controls
+
+The MFA-protected `/admin` panel manages calculator prices, portfolio items, and the live AI chat. The chatbot panel can enable/disable the widget, change its model and instructions, update its visible text and WhatsApp link, and rotate its ZRouter API key. API keys entered there are encrypted in MySQL with a purpose-derived key from `MFA_ENCRYPTION_KEY`; they are never returned to the browser. The API endpoint remains fixed to ZRouter to prevent arbitrary server-side requests.
+
+The settings table is created when an authenticated admin opens the chatbot settings panel. If the Hostinger database user does not have `CREATE TABLE` permission, run `database/migrations/001_livechat_settings.sql` once in phpMyAdmin. Existing deployments may continue using `ZROUTER_API_KEY` and `ZROUTER_MODEL` from Hostinger environment variables until the panel settings are saved.
+
 ## Import existing data
 
 Export required legacy rows as CSV or JSON into `migration/data` using the column names expected by `scripts/import-hostinger-data.mjs`. Supported files: `users`, `admins`, `oauth_accounts`, `products`, `fabrics`, `cuts`, `bag_sizes`, `print_methods`, `design_sizes`, `portfolio_items`, `portfolio_media_map`, `conversations`, and `messages`. Each can be a JSON array or CSV. For Supabase Auth, export `auth.users` fields `id`, `email`, `email_confirmed_at`, and `raw_user_meta_data` to `users.csv`; export `public.admins` as `admins.csv`; export Google rows from `auth.identities` with `provider`, `provider_id`, `user_id`, and `identity_data` as `oauth_accounts.csv`. Do not export password hashes. Put portfolio files in `migration/data/media`, and map old image URLs to safe filenames in `portfolio_media_map.csv` with columns `image_url,file_name`.

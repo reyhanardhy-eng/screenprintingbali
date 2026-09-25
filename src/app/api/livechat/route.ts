@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import {
+  DEFAULT_LIVECHAT_WIDGET,
+  getLivechatRuntimeConfig,
+} from "@/lib/livechat-config";
+import { LIVECHAT_SAFETY_RULES } from "@/lib/livechat-prompts";
 import { assertSameOrigin, checkRateLimit, clientAddress, sha256 } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
@@ -51,11 +56,6 @@ async function allowMessage(ip: string): Promise<boolean> {
   }
 }
 
-const SYSTEM_PROMPT = `You are the AI assistant for Screenprinting Bali, an in-house apparel printing studio in Bali, Indonesia.
-Reply in the same language as the visitor. Be concise, friendly, and practical.
-Known information: screen printing is best for larger runs and usually starts at 24 pieces; DTF can start at 1 piece; embroidery usually starts at 24 pieces. Typical lead times are 7–10 days for screen printing and 1–3 days for DTF. The studio is open Monday–Saturday, 09:00–18:00 WITA; Sunday by appointment.
-Never invent a final price, stock status, delivery promise, or order availability. Direct visitors to the website price calculator for an estimate and to WhatsApp for an exact quote, order confirmation, or anything that needs a person. Do not claim to be a human. Never ask for passwords, payment-card details, or one-time codes.`;
-
 function responseError(message: string, status: number) {
   return NextResponse.json({ error: message }, {
     status,
@@ -64,10 +64,26 @@ function responseError(message: string, status: number) {
 }
 
 export async function GET() {
-  return NextResponse.json(
-    { enabled: Boolean(process.env.ZROUTER_API_KEY) },
-    { headers: { "Cache-Control": "no-store" } }
-  );
+  try {
+    const config = await getLivechatRuntimeConfig();
+    return NextResponse.json(
+      {
+        enabled: config.enabled && Boolean(config.apiKey),
+        title: config.title,
+        subtitle: config.subtitle,
+        welcome: config.welcome,
+        privacyNote: config.privacyNote,
+        buttonLabel: config.buttonLabel,
+        whatsappUrl: config.whatsappUrl,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch {
+    return NextResponse.json(
+      { enabled: false, ...DEFAULT_LIVECHAT_WIDGET },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -77,8 +93,13 @@ export async function POST(request: NextRequest) {
     return responseError("Request rejected.", 403);
   }
 
-  const apiKey = process.env.ZROUTER_API_KEY;
-  if (!apiKey) return responseError("AI chat belum dikonfigurasi.", 503);
+  let config;
+  try {
+    config = await getLivechatRuntimeConfig();
+  } catch {
+    return responseError("AI chat belum dapat dimuat. Silakan hubungi kami lewat WhatsApp.", 503);
+  }
+  if (!config.enabled || !config.apiKey) return responseError("AI chat belum dikonfigurasi.", 503);
 
   let body: unknown;
   try {
@@ -100,13 +121,13 @@ export async function POST(request: NextRequest) {
     const upstream = await fetch("https://api.zrouter.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.ZROUTER_MODEL || "gpt-5.4",
+        model: config.model,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: `${config.systemPrompt}\n\n${LIVECHAT_SAFETY_RULES}` },
           ...parsedMessages,
         ],
         max_tokens: 400,
