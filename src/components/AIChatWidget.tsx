@@ -24,6 +24,7 @@ export default function AIChatWidget() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,13 +47,33 @@ export default function AIChatWidget() {
   }, [pathname]);
 
   useEffect(() => {
+    if (!open || pathname.startsWith("/admin")) return;
+    let active = true;
+    setLoadingHistory(true);
+    setError("");
+    fetch("/api/livechat?history=1", { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json() as { messages?: ChatMessage[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Riwayat chat belum dapat dimuat.");
+        if (active) setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
+      })
+      .catch((cause) => {
+        if (active) setError(cause instanceof Error ? cause.message : "Riwayat chat belum dapat dimuat.");
+      })
+      .finally(() => {
+        if (active) setLoadingHistory(false);
+      });
+    return () => { active = false; };
+  }, [open, pathname]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, sending]);
+  }, [messages, sending, loadingHistory]);
 
   async function send(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const content = draft.trim();
-    if (!content || sending || content.length > 2000) return;
+    if (!content || sending || loadingHistory || content.length > 2000) return;
 
     const userMessage: ChatMessage = { role: "user", content };
     const nextMessages = [...messages, userMessage].slice(-12);
@@ -64,7 +85,7 @@ export default function AIChatWidget() {
       const response = await fetch("/api/livechat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ message: content }),
       });
       const result = await response.json() as { reply?: string; error?: string };
       if (!response.ok || !result.reply) throw new Error(result.error || "Chat sedang tidak tersedia.");
@@ -91,12 +112,13 @@ export default function AIChatWidget() {
           <button className="chat-panel__close" type="button" aria-label="Close chat" onClick={() => setOpen(false)}>×</button>
         </div>
         <div className="chat-messages" aria-live="polite" aria-label="Chat messages">
-          {messages.length === 0 && <p className="chat-sub">{widget.welcome}</p>}
+          {messages.length === 0 && !loadingHistory && <p className="chat-sub">{widget.welcome}</p>}
           {messages.map((message, index) => (
             <div key={`${index}-${message.role}`} className={`chat-bubble chat-bubble--${message.role}`}>
               {message.content}
             </div>
           ))}
+          {loadingHistory && <p className="chat-sub" role="status">Memuat riwayat chat…</p>}
           {sending && <p className="chat-sub" role="status">Thinking…</p>}
           <div ref={bottomRef} />
         </div>
@@ -112,7 +134,7 @@ export default function AIChatWidget() {
             maxLength={2000}
             autoComplete="off"
           />
-          <button type="submit" className="chat-send-btn" disabled={sending || !draft.trim()}>
+          <button type="submit" className="chat-send-btn" disabled={sending || loadingHistory || !draft.trim()}>
             {sending ? "…" : "Send"}
           </button>
         </form>

@@ -22,7 +22,7 @@ Hostinger guidance: [deploy a Node.js website](https://www.hostinger.com/support
 
 ## Admin website controls
 
-The MFA-protected `/admin` panel manages calculator prices, portfolio items, and the live AI chat. The chatbot panel can enable/disable the widget, change its model and instructions, update its visible text and WhatsApp link, and rotate its ZRouter API key. API keys entered there are encrypted in MySQL with a purpose-derived key from `MFA_ENCRYPTION_KEY`; they are never returned to the browser. The API endpoint remains fixed to ZRouter to prevent arbitrary server-side requests.
+The MFA-protected `/admin` panel manages calculator prices, portfolio items, and the live AI chat. The chatbot panel can enable/disable the widget, change its model and instructions, update its visible text and WhatsApp link, and rotate its ZRouter API key. API keys entered there are encrypted in MySQL with a purpose-derived key from `MFA_ENCRYPTION_KEY`; they are never returned to the browser. The API endpoint remains fixed to ZRouter to prevent arbitrary server-side requests. Anonymous AI chat history is stored in Hostinger MySQL and restored with a random, HttpOnly browser cookie; it is not matched by IP because shared or changing IPs can expose one person's chat to another. A session expires after 180 days without activity and holds at most the most recent 100 messages.
 
 The settings table is created when an authenticated admin opens the chatbot settings panel. If the Hostinger database user does not have `CREATE TABLE` permission, run `database/migrations/001_livechat_settings.sql` once in phpMyAdmin. Existing deployments may continue using `ZROUTER_API_KEY` and `ZROUTER_MODEL` from Hostinger environment variables until the panel settings are saved.
 

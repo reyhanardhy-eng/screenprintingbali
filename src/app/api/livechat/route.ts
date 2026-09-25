@@ -6,17 +6,19 @@ import {
 } from "@/lib/livechat-config";
 import { LIVECHAT_SAFETY_RULES } from "@/lib/livechat-prompts";
 import { assertSameOrigin, checkRateLimit, clientAddress, sha256 } from "@/lib/security";
+import {
+  getLivechatHistory,
+  getOrCreateLivechatSession,
+  LIVECHAT_COOKIE_MAX_AGE,
+  LIVECHAT_COOKIE_NAME,
+  saveLivechatExchange,
+} from "@/lib/livechat-history";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const messageSchema = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().trim().min(1).max(2000),
-}).strict();
-
 const requestSchema = z.object({
-  messages: z.array(messageSchema).min(1).max(12),
+  message: z.string().trim().min(1).max(2000),
 }).strict();
 
 const localRateLimits = new Map<string, { count: number; windowStartedAt: number }>();
@@ -63,22 +65,44 @@ function responseError(message: string, status: number) {
   });
 }
 
-export async function GET() {
+function setSessionCookie(response: NextResponse, token: string): void {
+  response.cookies.set(LIVECHAT_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: LIVECHAT_COOKIE_MAX_AGE,
+  });
+}
+
+export async function GET(request: NextRequest) {
   try {
     const config = await getLivechatRuntimeConfig();
-    return NextResponse.json(
-      {
-        enabled: config.enabled && Boolean(config.apiKey),
-        title: config.title,
-        subtitle: config.subtitle,
-        welcome: config.welcome,
-        privacyNote: config.privacyNote,
-        buttonLabel: config.buttonLabel,
-        whatsappUrl: config.whatsappUrl,
-      },
+    const settings = {
+      enabled: config.enabled && Boolean(config.apiKey),
+      title: config.title,
+      subtitle: config.subtitle,
+      welcome: config.welcome,
+      privacyNote: config.privacyNote,
+      buttonLabel: config.buttonLabel,
+      whatsappUrl: config.whatsappUrl,
+    };
+    if (request.nextUrl.searchParams.get("history") !== "1" || !settings.enabled) {
+      return NextResponse.json(settings, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    const session = await getOrCreateLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
+    const messages = await getLivechatHistory(session.id);
+    const response = NextResponse.json(
+      { ...settings, messages },
       { headers: { "Cache-Control": "no-store" } }
     );
+    setSessionCookie(response, session.token);
+    return response;
   } catch {
+    if (request.nextUrl.searchParams.get("history") === "1") {
+      return responseError("Riwayat chat belum dapat dimuat. Coba buka chat kembali.", 503);
+    }
     return NextResponse.json(
       { enabled: false, ...DEFAULT_LIVECHAT_WIDGET },
       { headers: { "Cache-Control": "no-store" } }
@@ -109,8 +133,7 @@ export async function POST(request: NextRequest) {
   }
 
   const parsed = requestSchema.safeParse(body);
-  const parsedMessages = parsed.success ? parsed.data.messages : [];
-  if (!parsed.success || parsedMessages[parsedMessages.length - 1]?.role !== "user") {
+  if (!parsed.success) {
     return responseError("Pesan tidak valid.", 400);
   }
 
@@ -118,6 +141,8 @@ export async function POST(request: NextRequest) {
     const allowed = await allowMessage(clientAddress(request));
     if (!allowed) return responseError("Terlalu banyak pesan. Coba lagi beberapa menit.", 429);
 
+    const session = await getOrCreateLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
+    const history = await getLivechatHistory(session.id);
     const upstream = await fetch("https://api.zrouter.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -128,7 +153,8 @@ export async function POST(request: NextRequest) {
         model: config.model,
         messages: [
           { role: "system", content: `${config.systemPrompt}\n\n${LIVECHAT_SAFETY_RULES}` },
-          ...parsedMessages,
+          ...history,
+          { role: "user", content: parsed.data.message },
         ],
         max_tokens: 400,
         temperature: 0.4,
@@ -158,10 +184,14 @@ export async function POST(request: NextRequest) {
       return responseError("Chat belum mendapat jawaban. Silakan hubungi kami lewat WhatsApp.", 502);
     }
 
-    return NextResponse.json(
-      { reply: reply.trim().slice(0, 5000) },
+    const cleanReply = reply.trim().slice(0, 5000);
+    await saveLivechatExchange(session.id, parsed.data.message, cleanReply);
+    const response = NextResponse.json(
+      { reply: cleanReply },
       { headers: { "Cache-Control": "no-store" } }
     );
+    setSessionCookie(response, session.token);
+    return response;
   } catch (error) {
     const details = error && typeof error === "object"
       ? error as { name?: unknown; code?: unknown }
