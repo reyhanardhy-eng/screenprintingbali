@@ -38,7 +38,8 @@ export default function AIChatWidget() {
     const content = draft.trim();
     if (!content || sending || content.length > 2000) return;
 
-    const nextMessages: ChatMessage[] = [...messages, { role: "user", content }].slice(-12);
+    const userMessage: ChatMessage = { role: "user", content };
+    const nextMessages = [...messages, userMessage].slice(-12);
     setMessages(nextMessages);
     setDraft("");
     setError("");
