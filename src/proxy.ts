@@ -8,7 +8,14 @@ const PUBLIC_ADMIN_PATHS = new Set([
 ]);
 
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.toLowerCase() === "/admin" && pathname !== "/admin") {
+    const destination = request.nextUrl.clone();
+    destination.pathname = "/admin";
+    return NextResponse.redirect(destination, 307);
+  }
+
   if (PUBLIC_ADMIN_PATHS.has(pathname)) return NextResponse.next();
   const hasSessionCookie = Boolean(
     request.cookies.get("__Host-spb_session")?.value ||
@@ -24,5 +31,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/ADMIN"],
 };
