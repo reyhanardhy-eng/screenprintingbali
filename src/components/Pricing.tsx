@@ -133,7 +133,8 @@ export default function Pricing() {
           </div>
         </div>
         <p className="pricing-note">
-          // &quot;Start from&quot; prices reflect our entry-level fabric and
+          {"// \"Start from\" prices reflect our entry-level fabric and"}
+          {" "}
           design size. Final quote depends on garment, fabric grade, colors,
           quantity, and design size. Screen setup is a one-time fee per
           color, amortized across your order. The more pieces, the lower

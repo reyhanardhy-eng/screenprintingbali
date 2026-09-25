@@ -10,6 +10,9 @@ type PasswordInputProps = {
   minLength?: number;
   className?: string;
   style?: React.CSSProperties;
+  id?: string;
+  autoComplete?: string;
+  maxLength?: number;
 };
 
 export default function PasswordInput({
@@ -20,12 +23,16 @@ export default function PasswordInput({
   minLength,
   className,
   style,
+  id,
+  autoComplete = "current-password",
+  maxLength,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div className="password-field">
       <input
+        id={id}
         type={visible ? "text" : "password"}
         placeholder={placeholder}
         value={value}
@@ -34,7 +41,8 @@ export default function PasswordInput({
         minLength={minLength}
         className={className}
         style={style}
-        autoComplete="current-password"
+        autoComplete={autoComplete}
+        maxLength={maxLength}
       />
       <button
         type="button"

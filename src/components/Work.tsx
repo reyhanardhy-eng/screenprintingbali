@@ -1,4 +1,5 @@
-import { fetchPortfolioItems, type PortfolioItem } from "@/lib/portfolio";
+import { fetchPortfolioItems } from "@/lib/portfolio";
+import type { PortfolioItem } from "@/lib/portfolio-types";
 
 const FALLBACK_ROW_1: PortfolioItem[] = [
   { id: -1, title_line1: "Brand drop", title_line2: "2 colors screen", meta: "Local brand · 36 pcs · Plastisol", image_url: null, sort_order: 0 },
@@ -59,7 +60,7 @@ export default async function Work() {
       [row1, row2] = splitIntoRows(items);
     }
   } catch {
-    // Supabase not configured yet or table empty — fall back to placeholders.
+    // MySQL may be unavailable during build or initial setup; keep the public page useful.
   }
 
   return (

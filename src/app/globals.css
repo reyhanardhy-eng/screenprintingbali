@@ -1099,6 +1099,22 @@ section {
   color: var(--ink-soft);
   margin-bottom: 40px;
 }
+.auth-card { max-width: 480px; }
+.auth-field { margin-bottom: 16px; }
+.auth-field > input, .auth-field .password-field > input {
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: var(--paper-light);
+  padding: 10px 12px;
+  font: 14px var(--font-body);
+}
+.auth-field > .calc-field__label { display: block; margin-bottom: 6px; }
+.auth-link { display: block; margin-top: 14px; color: var(--ink-soft); font-size: 13px; text-decoration: underline; }
+.auth-card .admin-status { margin: 16px 0; }
+.mfa-qr { display: block; width: 240px; max-width: 100%; margin: 0 auto 18px; background: white; }
+.mfa-secret { padding: 12px; background: var(--paper-deep); overflow-wrap: anywhere; }
+.recovery-code-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; list-style: none; padding: 0; margin: 16px 0 24px; }
+.recovery-code-list li { padding: 8px; text-align: center; background: var(--paper-deep); }
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -1416,6 +1432,7 @@ section {
 }
 .chat-send-btn:hover { background: var(--vermillion); border-color: var(--vermillion); }
 .chat-google-btn {
+  display: block;
   width: 100%;
   border: 1px solid var(--ink);
   background: var(--paper);
@@ -1427,6 +1444,7 @@ section {
   margin-bottom: 14px;
 }
 .chat-google-btn:hover { background: var(--paper-deep); }
+.chat-auth-links { display: grid; gap: 4px; }
 .chat-divider {
   text-align: center;
   font-family: var(--font-mono);

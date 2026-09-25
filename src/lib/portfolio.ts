@@ -1,20 +1,13 @@
-import { supabase } from "./supabase";
+import "server-only";
+import { rows } from "./db";
+import type { PortfolioItem } from "./portfolio-types";
 
-export type PortfolioItem = {
-  id: number;
-  title_line1: string;
-  title_line2: string;
-  meta: string;
-  image_url: string | null;
-  sort_order: number;
-};
+export type { PortfolioItem } from "./portfolio-types";
 
 export async function fetchPortfolioItems(): Promise<PortfolioItem[]> {
-  const { data, error } = await supabase
-    .from("portfolio_items")
-    .select("*")
-    .order("sort_order");
-
-  if (error) throw error;
-  return data as PortfolioItem[];
+  const items = await rows(
+    `SELECT id, title_line1, title_line2, meta, image_url, sort_order
+     FROM portfolio_items ORDER BY sort_order, id`
+  );
+  return items as unknown as PortfolioItem[];
 }

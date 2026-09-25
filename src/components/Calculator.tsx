@@ -1,7 +1,8 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect -- These effects reconcile dependent calculator selections after live pricing loads or a parent option changes. */
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchPricingData, type PricingData } from "@/lib/pricing";
+import type { PricingData, Product, Fabric, DesignSize } from "@/lib/pricing-types";
 
 const MAX_COLORS = 4;
 const WA_NUMBER = "6283174145415";
@@ -32,7 +33,11 @@ export default function Calculator() {
   const [state, setState] = useState<CalcState | null>(null);
 
   useEffect(() => {
-    fetchPricingData()
+    fetch("/api/pricing")
+      .then((response) => {
+        if (!response.ok) throw new Error("Pricing is temporarily unavailable.");
+        return response.json() as Promise<PricingData>;
+      })
       .then((d) => {
         setData(d);
         const firstProduct = d.products[0];
@@ -148,8 +153,8 @@ function CalculatorReady({
   data: PricingData;
   state: CalcState;
   setState: (s: CalcState) => void;
-  product: import("@/lib/pricing").Product;
-  fabricsForProduct: import("@/lib/pricing").Fabric[];
+  product: Product;
+  fabricsForProduct: Fabric[];
 }) {
   const isScreenMethod = useMemo(() => {
     const m = data.printMethods.find((x) => x.slug === state.method);
@@ -192,13 +197,13 @@ function CalculatorReady({
       return filmCost * (method!.press_margin ?? 1) + (method!.press_flat_cost ?? 0);
     }
 
-    function sidedScreenCost(designSize: import("@/lib/pricing").DesignSize | undefined, printPerSide: number) {
+    function sidedScreenCost(designSize: DesignSize | undefined, printPerSide: number) {
       if (!designSize) return 0;
       return printPerSide * designSize.multiplier;
     }
 
     let printCost: number;
-    let methodLabel = method.label;
+    const methodLabel = method.label;
     const colors = Math.min(state.colors, MAX_COLORS);
 
     if (method.type === "screen") {
