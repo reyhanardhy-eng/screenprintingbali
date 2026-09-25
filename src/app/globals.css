@@ -1391,7 +1391,8 @@ section {
   animation: chat-fab-bounce 4.5s ease-in-out infinite;
 }
 .chat-fab:hover { background: var(--ink); border-color: var(--ink); animation-play-state: paused; }
-.chat-fab__icon { font-size: 20px; line-height: 1; position: relative; }
+.chat-fab__icon { display: block; width: 20px; height: 20px; flex: none; }
+.chat-fab__icon--close { font-size: 24px; line-height: 18px; text-align: center; }
 .chat-fab__label { font-size: 13px; white-space: nowrap; }
 .chat-fab__ping {
   position: absolute;

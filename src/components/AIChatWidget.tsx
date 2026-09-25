@@ -143,7 +143,12 @@ export default function AIChatWidget() {
       </section>
     </>}
     <button className="chat-fab" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={open ? "Close AI chat" : "Open AI chat"}>
-      <span className="chat-fab__icon">{open ? "×" : "✳"}</span>
+      {open ? <span className="chat-fab__icon chat-fab__icon--close" aria-hidden="true">×</span> : (
+        <svg className="chat-fab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M20.5 11.5a8.5 8.5 0 0 1-12.9 7.3L3 20l1.2-4.2a8.5 8.5 0 1 1 16.3-4.3Z" />
+          <path d="M8 12h.01M12 12h.01M16 12h.01" strokeWidth="2.2" />
+        </svg>
+      )}
       <span className="chat-fab__label">{widget.buttonLabel}</span>
     </button>
   </>;
