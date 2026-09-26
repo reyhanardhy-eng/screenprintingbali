@@ -2,124 +2,96 @@ import Link from "next/link";
 
 const SERVICES = [
   {
-    number: "01 / LARGER RUNS",
+    number: "01",
+    label: "For the bigger run",
     title: "Screen printing",
-    text: "A strong fit for a defined design and a larger apparel run, printed in our Bali studio.",
+    text: "Rich, durable prints for a design you are ready to put into the world. Made for brand drops, teams, and merchandise.",
     href: "/screen-printing-bali",
     detail: "From 24 pieces · 7–10 days",
-  },
-  {
-    number: "02 / SAMPLES & SHORT RUNS",
-    title: "DTF printing",
-    text: "Full-colour transfers for samples, one-off pieces, and smaller quantities.",
-    href: "/dtf-printing-bali",
-    detail: "From 1 piece · 1–3 days",
-  },
-  {
-    number: "03 / BUILD A LABEL",
-    title: "Apparel Brand Starter",
-    text: "Get practical design and production support to take an apparel idea into its first product.",
-    href: "/apparel-brand-starter-bali",
-    detail: "Project-based · from IDR 2.5m",
-  },
-];
-
-const PAGES = [
-  {
-    number: "01",
-    title: "Services",
-    text: "Compare printing methods and production options.",
-    href: "/services",
+    mark: "S",
   },
   {
     number: "02",
-    title: "Work",
-    text: "Visit the portfolio and see what is being made in the studio.",
-    href: "/work",
+    label: "For the first sample",
+    title: "DTF printing",
+    text: "Bring a full-colour idea to life on a single piece, a short run, or a last-minute project.",
+    href: "/dtf-printing-bali",
+    detail: "From 1 piece · 1–3 days",
+    mark: "D",
   },
   {
     number: "03",
-    title: "Pricing & calculator",
-    text: "Explore pricing and estimate the scope of your order.",
-    href: "/pricing",
-  },
-  {
-    number: "04",
-    title: "The studio",
-    text: "Learn how design, printing, finishing, and quality checks come together.",
-    href: "/studio",
-  },
-  {
-    number: "05",
-    title: "Frequently asked questions",
-    text: "Get quick answers about artwork, quantities, timing, and delivery.",
-    href: "/faq",
-  },
-  {
-    number: "06",
-    title: "Contact & quote",
-    text: "Share your idea, quantity, and timeline to start a conversation.",
-    href: "/contact",
+    label: "For the brand taking shape",
+    title: "Apparel Brand Starter",
+    text: "Turn a loose concept into your first product with practical design and production support from our Bali studio.",
+    href: "/apparel-brand-starter-bali",
+    detail: "Project-based · from IDR 2.5m",
+    mark: "B",
   },
 ];
 
+const QUICK_LINKS = [
+  ["See the work", "/work"],
+  ["Price calculator", "/pricing"],
+  ["Meet the studio", "/studio"],
+  ["Common questions", "/faq"],
+  ["Talk through an idea", "/contact"],
+] as const;
+
 export default function HomeOverview() {
   return (
-    <section className="home-overview">
+    <section className="home-overview" id="services">
       <div className="container">
-        <div className="home-overview__heading">
+        <header className="home-overview__heading">
           <div>
-            <p className="eyebrow">A studio for your next run</p>
-            <h2>Make a product people want to keep.</h2>
+            <p className="eyebrow">Pick a production path</p>
+            <h2>
+              Start with an idea.
+              <br />
+              <em>Leave with a product.</em>
+            </h2>
           </div>
           <p>
-            Start with a print method, a garment, or a rough idea. We will help
-            shape the brief and confirm what is practical to produce in Bali.
+            Samples, brand drops, or the first pieces of something bigger.
+            Tell us what you are making and we will help you find the right way
+            to get it made.
           </p>
-        </div>
+        </header>
 
-        <div className="home-services" aria-label="Choose a production service">
+        <nav className="home-services" aria-label="Choose a production service">
           {SERVICES.map((service) => (
             <Link className="home-service" href={service.href} key={service.number}>
-              <span className="eyebrow">{service.number}</span>
-              <h3>{service.title}</h3>
-              <p>{service.text}</p>
-              <span className="home-service__detail">{service.detail}</span>
-              <span className="home-service__link">
-                Explore service <span aria-hidden="true">↗</span>
+              <span className="home-service__number" aria-hidden="true">{service.number}</span>
+              <span className="home-service__body">
+                <span className="home-service__label">{service.label}</span>
+                <strong>{service.title}</strong>
+                <span className="home-service__text">{service.text}</span>
               </span>
+              <span className="home-service__aside">
+                <span>{service.detail}</span>
+                <span>Explore route <span aria-hidden="true">↗</span></span>
+              </span>
+              <span className="home-service__mark" aria-hidden="true">{service.mark}</span>
             </Link>
           ))}
-        </div>
+        </nav>
 
         <div className="home-facts" aria-label="Production at a glance">
-          <div><strong>From 1 piece</strong><span>DTF samples and short runs</span></div>
-          <div><strong>From 24 pieces</strong><span>Screen printed bulk orders</span></div>
-          <div><strong>Made in Bali</strong><span>Printing and finishing in-house</span></div>
+          <div><strong>01 piece</strong><span>Start with a DTF sample</span></div>
+          <div><strong>24+ pieces</strong><span>Built for screen print runs</span></div>
+          <div><strong>Made in Bali</strong><span>Printed and finished in-house</span></div>
         </div>
 
-        <div className="home-pages">
-          <div className="home-pages__heading">
-            <div>
-              <p className="eyebrow">Explore the studio</p>
-              <h2>Everything you need, one step away.</h2>
-            </div>
-            <p>Choose a page to compare options, understand the process, or move your project forward.</p>
-          </div>
-          <nav className="home-pages__grid" aria-label="Explore website pages">
-            {PAGES.map((page) => (
-              <Link className="home-page-link" href={page.href} key={page.href}>
-                <span className="home-page-link__number">{page.number}</span>
-                <span className="home-page-link__copy">
-                  <strong>{page.title}</strong>
-                  <span>{page.text}</span>
-                </span>
-                <span className="home-page-link__arrow" aria-hidden="true">↗</span>
-              </Link>
+        <nav className="home-quicklinks" aria-label="Explore the studio">
+          <span className="eyebrow">A few useful places</span>
+          <div>
+            {QUICK_LINKS.map(([label, href]) => (
+              <Link href={href} key={href}>{label}<span aria-hidden="true">↗</span></Link>
             ))}
-          </nav>
-        </div>
+          </div>
+        </nav>
       </div>
     </section>
   );
 }
+
