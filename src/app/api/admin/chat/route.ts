@@ -3,6 +3,7 @@ import { z } from "zod";
 import { adminApiResponse } from "@/lib/admin-api";
 import { run } from "@/lib/db";
 import {
+  deleteAdminLivechatConversation,
   getAdminLivechatConversations,
   getAdminLivechatMessages,
   saveAdminLivechatReply,
@@ -30,6 +31,8 @@ function responseError(message: string, status: number) {
   });
 }
 
+const deleteSchema = z.object({ sessionId: z.string().uuid() }).strict();
+
 export async function GET(request: NextRequest) {
   const { user, response } = await adminApiResponse();
   if (response || !user) return response;
@@ -50,6 +53,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ conversation, messages }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return responseError("Chat inbox could not be loaded. Check the database connection.", 503);
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try { assertSameOrigin(request); } catch {
+    return responseError("Request rejected.", 403);
+  }
+
+  const { user, response } = await adminApiResponse();
+  if (response || !user) return response;
+
+  let body: unknown;
+  try { body = await request.json(); } catch {
+    return responseError("Invalid conversation.", 400);
+  }
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) return responseError("Invalid conversation.", 400);
+
+  try {
+    if (!(await checkRateLimit(`admin-chat-write:${user.id}`, 40, 60))) {
+      return responseError("Too many changes. Please wait a moment.", 429);
+    }
+    const deleted = await deleteAdminLivechatConversation(
+      parsed.data.sessionId,
+      user.id,
+      sha256(clientAddress(request)).slice(0, 64)
+    );
+    if (!deleted) return responseError("This conversation was already removed or expired.", 404);
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return responseError("The conversation could not be deleted. Please try again.", 503);
   }
 }
 

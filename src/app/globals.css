@@ -1759,6 +1759,20 @@ section {
   border-bottom: 1px solid var(--rule);
   font-size: 13px;
 }
+.admin-chat-thread-actions { display: flex; align-items: center; gap: 10px; }
+.admin-chat-delete {
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--vermillion);
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.admin-chat-delete:hover { border-color: var(--vermillion); background: var(--paper-deep); }
+.admin-chat-delete:disabled { opacity: 0.6; cursor: wait; }
 .admin-chat-thread .chat-messages {
   flex: 1;
   min-height: 300px;
