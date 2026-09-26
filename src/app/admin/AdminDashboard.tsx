@@ -123,6 +123,7 @@ export default function AdminPage() {
 function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   const [items, setItems] = useState<PortfolioItem[] | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | "new" | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/portfolio", { cache: "no-store" })
@@ -158,25 +159,49 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     return response.json() as Promise<PortfolioItem[]>;
   }
 
-  async function handleUpload(i: number, file: File) {
-    if (!items) return;
-    const row = items[i];
+  async function handleUpload(row: PortfolioItem, file: File) {
+    if (!items || busyId !== null) return;
+    if (file.size < 1 || file.size > 5 * 1024 * 1024) {
+      flash("Choose an image smaller than 5 MB.");
+      return;
+    }
+    if (!/\.(?:jpe?g|png|webp)$/i.test(file.name)) {
+      flash("Use a JPG, PNG, or WebP image.");
+      return;
+    }
     setBusyId(row.id);
     try {
       const formData = new FormData();
       formData.set("file", file);
       const upload = await fetch("/api/admin/portfolio/upload", { method: "POST", body: formData });
-      if (!upload.ok) {
-        flash("Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
+      const uploaded = await upload.json().catch(() => ({})) as { image_url?: string; error?: string };
+      if (!upload.ok || !uploaded.image_url) {
+        flash(uploaded.error || "Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
         return;
       }
-      const uploaded = await upload.json() as { image_url: string };
       const saved = await persist({ ...row, image_url: uploaded.image_url });
       if (!saved) return;
       setItems(await reloadItems());
       flash("Image saved and published to the website.");
     } catch {
       flash("Could not upload or publish the image. Please try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleRemoveImage(i: number) {
+    if (!items) return;
+    const row = items[i];
+    if (!row.image_url) return;
+    setBusyId(row.id);
+    try {
+      const saved = await persist({ ...row, image_url: null });
+      if (!saved) return;
+      setItems(await reloadItems());
+      flash("Photo removed from the portfolio.");
+    } catch {
+      flash("Could not remove the photo. Please try again.");
     } finally {
       setBusyId(null);
     }
@@ -222,16 +247,16 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     }
   }
 
-  function addCard() {
+  function handleAddPhoto(file: File) {
     const newRow: PortfolioItem = {
-      id: -((items?.length ?? 0) + 1),
-      title_line1: "",
+      id: -Date.now(),
+      title_line1: "Portfolio image",
       title_line2: "",
       meta: "",
       image_url: null,
       sort_order: items?.length ?? 0,
     };
-    setItems([...(items ?? []), newRow]);
+    void handleUpload(newRow, file);
   }
 
   if (!items) {
@@ -241,29 +266,70 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   return (
     <div id="portfolio-settings" className="portfolio-manager">
       <p className="admin-sub" style={{ marginTop: -24 }}>
-        Images shown in the “Some things we&apos;ve printed” section on the homepage.
+        Drop a JPG, PNG, or WebP onto a photo tile, or choose a photo below it. Use × to remove only the photo; “Delete entry” removes the whole portfolio card.
       </p>
       <div className="portfolio-grid">
         {items.map((r, i) => (
           <div key={r.id} className="portfolio-card">
-            <div className="portfolio-card__photo">
+            <div
+              className={`portfolio-card__photo${dragOverId === r.id ? " portfolio-card__photo--dragging" : ""}`}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setDragOverId(r.id);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+                setDragOverId(r.id);
+              }}
+              onDragLeave={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverId(null);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragOverId(null);
+                const files = Array.from(event.dataTransfer.files);
+                if (files.length !== 1) {
+                  flash("Drop one photo into each portfolio card.");
+                  return;
+                }
+                void handleUpload(r, files[0]);
+              }}
+            >
               {r.image_url ? (
-                <img src={r.image_url} alt="" />
+                <img src={r.image_url} alt={r.title_line1} draggable={false} />
               ) : (
-                <span className="portfolio-card__placeholder">No image uploaded</span>
+                <span className="portfolio-card__placeholder">
+                  <strong>No photo yet</strong>
+                  <span>Drop a JPG, PNG, or WebP here</span>
+                </span>
+              )}
+              {dragOverId === r.id && <span className="portfolio-card__drop-overlay">Drop to upload</span>}
+              {r.image_url && (
+                <button
+                  type="button"
+                  className="portfolio-card__remove-image"
+                  aria-label="Remove photo from portfolio"
+                  title="Remove photo"
+                  disabled={busyId !== null}
+                  onClick={() => void handleRemoveImage(i)}
+                >
+                  ×
+                </button>
               )}
             </div>
             <label className="portfolio-card__upload">
-              {busyId === r.id ? "Saving…" : r.image_url ? "Replace image" : "Upload image"}
+              {busyId === r.id ? "Saving…" : r.image_url ? "Replace photo" : "Choose photo"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
+                className="portfolio-card__file-input"
                 disabled={busyId !== null}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleUpload(i, file);
+                  if (file) void handleUpload(r, file);
+                  e.currentTarget.value = "";
                 }}
-                hidden
               />
             </label>
             <input
@@ -286,13 +352,49 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               disabled={busyId !== null}
               onClick={() => handleDelete(r)}
             >
-              Delete
+              Delete entry
             </button>
           </div>
         ))}
-        <button type="button" className="portfolio-card portfolio-card--add" onClick={addCard}>
-          + Add image
-        </button>
+        <label
+          className={`portfolio-card portfolio-card--add${dragOverId === "new" ? " portfolio-card--add-dragging" : ""}`}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            setDragOverId("new");
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setDragOverId("new");
+          }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverId(null);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragOverId(null);
+            const files = Array.from(event.dataTransfer.files);
+            if (files.length !== 1) {
+              flash("Drop one photo at a time.");
+              return;
+            }
+            handleAddPhoto(files[0]);
+          }}
+        >
+          <span className="portfolio-card__add-title">+ Add portfolio photo</span>
+          <span className="portfolio-card__add-hint">Drop a photo here or choose a file</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="portfolio-card__add-input"
+            disabled={busyId !== null}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) handleAddPhoto(file);
+              event.currentTarget.value = "";
+            }}
+          />
+        </label>
       </div>
     </div>
   );
