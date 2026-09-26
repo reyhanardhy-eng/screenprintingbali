@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DEFAULT_LIVECHAT_WIDGET } from "@/lib/livechat-shared";
 
-type ChatMessage = { role: "user" | "assistant" | "admin"; content: string };
+type ChatMessage = { role: "user" | "assistant" | "admin"; content: string; pendingId?: string };
 type WidgetSettings = {
   title: string;
   subtitle: string;
@@ -80,7 +80,7 @@ export default function AIChatWidget() {
         const response = await fetch("/api/livechat?history=1", { cache: "no-store" });
         if (!response.ok) return;
         const result = await response.json() as { messages?: ChatMessage[]; humanMode?: boolean };
-        if (active) {
+        if (active && !sendingRef.current) {
           setMessages(Array.isArray(result.messages) ? result.messages.slice(-12) : []);
           setHumanMode(result.humanMode === true);
         }
@@ -102,7 +102,8 @@ export default function AIChatWidget() {
     const content = draft.trim();
     if (!content || sending || loadingHistory || content.length > 2000) return;
 
-    const userMessage: ChatMessage = { role: "user", content };
+    const pendingId = crypto.randomUUID();
+    const userMessage: ChatMessage = { role: "user", content, pendingId };
     const nextMessages = [...messages, userMessage].slice(-12);
     setMessages(nextMessages);
     setDraft("");
@@ -123,8 +124,13 @@ export default function AIChatWidget() {
       }
       if (!result.reply) throw new Error("Chat is temporarily unavailable.");
       const assistantMessage: ChatMessage = { role: "assistant", content: result.reply };
-      setMessages([...nextMessages, assistantMessage].slice(-12));
+      setMessages((current) => [
+        ...current.filter((message) => message.pendingId !== pendingId),
+        assistantMessage,
+      ].slice(-12));
     } catch (cause) {
+      setMessages((current) => current.filter((message) => message.pendingId !== pendingId));
+      setDraft((current) => current || content);
       setError(cause instanceof Error ? cause.message : "Chat is temporarily unavailable.");
     } finally {
       setSending(false);
@@ -148,7 +154,7 @@ export default function AIChatWidget() {
         <div className="chat-messages" aria-live="polite" aria-label="Chat messages">
           {messages.length === 0 && !loadingHistory && <p className="chat-sub">{widget.welcome}</p>}
           {messages.map((message, index) => (
-            <div key={`${index}-${message.role}`} className={`chat-bubble chat-bubble--${message.role}`}>
+            <div key={message.pendingId ?? `${index}-${message.role}`} className={`chat-bubble chat-bubble--${message.role}`}>
               {message.content}
             </div>
           ))}
@@ -188,3 +194,4 @@ export default function AIChatWidget() {
     </button>
   </>;
 }
+

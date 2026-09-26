@@ -40,7 +40,10 @@ export default function LivechatInbox({ flash }: Props) {
 
   useEffect(() => {
     let active = true;
+    let refreshing = false;
     const refresh = async () => {
+      if (!active || refreshing) return;
+      refreshing = true;
       try {
         const response = await fetch("/api/admin/chat", { cache: "no-store" });
         const result = await response.json() as { conversations?: Conversation[]; error?: string };
@@ -58,6 +61,7 @@ export default function LivechatInbox({ flash }: Props) {
         if (active) setError(cause instanceof Error ? cause.message : "Chat inbox could not be loaded.");
       } finally {
         if (active) setLoading(false);
+        refreshing = false;
       }
     };
     void refresh();
@@ -70,12 +74,12 @@ export default function LivechatInbox({ flash }: Props) {
 
   useEffect(() => {
     followLatestRef.current = true;
-    if (!selectedId) {
-      setMessages([]);
-      return;
-    }
+    if (!selectedId) return;
     let active = true;
+    let refreshing = false;
     const refresh = async () => {
+      if (!active || refreshing) return;
+      refreshing = true;
       try {
         const response = await fetch(`/api/admin/chat?sessionId=${encodeURIComponent(selectedId)}`, { cache: "no-store" });
         const result = await response.json() as { conversation?: Conversation; messages?: Message[]; error?: string };
@@ -87,6 +91,8 @@ export default function LivechatInbox({ flash }: Props) {
         setError("");
       } catch (cause) {
         if (active) setError(cause instanceof Error ? cause.message : "This conversation could not be opened.");
+      } finally {
+        refreshing = false;
       }
     };
     void refresh();
@@ -184,7 +190,10 @@ export default function LivechatInbox({ flash }: Props) {
               type="button"
               key={conversation.id}
               className={`admin-chat-list-item ${selectedId === conversation.id ? "is-active" : ""}`}
-              onClick={() => setSelectedId(conversation.id)}
+              onClick={() => {
+                setMessages([]);
+                setSelectedId(conversation.id);
+              }}
             >
               <span className="admin-chat-list-copy">
                 <strong>Visitor {conversation.id.slice(0, 6).toUpperCase()}</strong>
@@ -265,3 +274,4 @@ export default function LivechatInbox({ flash }: Props) {
     </section>
   );
 }
+

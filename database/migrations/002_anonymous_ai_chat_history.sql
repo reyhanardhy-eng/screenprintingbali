@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS ai_chat_sessions (
   id CHAR(36) NOT NULL PRIMARY KEY,
   token_hash CHAR(64) NOT NULL UNIQUE,
+  human_mode TINYINT(1) NOT NULL DEFAULT 0,
   expires_at DATETIME NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -12,7 +13,7 @@ CREATE TABLE IF NOT EXISTS ai_chat_sessions (
 CREATE TABLE IF NOT EXISTS ai_chat_messages (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   session_id CHAR(36) NOT NULL,
-  role ENUM('user', 'assistant') NOT NULL,
+  role ENUM('user', 'assistant', 'admin') NOT NULL,
   body TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX ai_chat_messages_session_idx (session_id, id),
@@ -20,3 +21,4 @@ CREATE TABLE IF NOT EXISTS ai_chat_messages (
     REFERENCES ai_chat_sessions(id) ON DELETE CASCADE,
   CONSTRAINT ai_chat_messages_body_nonempty CHECK (CHAR_LENGTH(TRIM(body)) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  DEFAULT_LIVECHAT_WIDGET,
   type LivechatAdminSettings,
   type LivechatApiKeySource,
 } from "@/lib/livechat-shared";
@@ -229,3 +228,4 @@ export default function LivechatSettings({ flash }: Props) {
     </section>
   );
 }
+

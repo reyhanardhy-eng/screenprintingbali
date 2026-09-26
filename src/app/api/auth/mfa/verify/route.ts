@@ -47,7 +47,14 @@ export async function POST(request: NextRequest) {
   }
   if (!verified) return NextResponse.json({ error: "Invalid code." }, { status: 401 });
 
-  await run("DELETE FROM sessions WHERE id = ?", [pending.session_id]);
+  const consumed = await run("DELETE FROM sessions WHERE id = ? AND user_id = ? AND auth_level = 'mfa_challenge'", [
+    pending.session_id,
+    pending.id,
+  ]);
+  if (consumed.affectedRows !== 1) {
+    return NextResponse.json({ error: "Sign-in challenge expired." }, { status: 401 });
+  }
   await issueSession(pending.id, "full");
   return NextResponse.json({ ok: true });
 }
+
