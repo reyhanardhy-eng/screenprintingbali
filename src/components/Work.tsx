@@ -81,11 +81,23 @@ export default async function Work({
           </div>
         ) : (
           <div className="work-empty">
-            <p>Your brand could be next.</p>
-            <span>Tell us what you&apos;re making and we&apos;ll help you choose the right print method.</span>
-            <a href="https://wa.me/6283174145415" target="_blank" rel="noopener noreferrer">
-              Plan your print run <span aria-hidden="true">↗</span>
-            </a>
+            <div className="work-empty__intro">
+              <p className="eyebrow">Your next project starts here</p>
+              <h3>Let&apos;s make your idea real.</h3>
+              <p className="work-empty__text">
+                We are building out this portfolio. In the meantime, explore
+                production options or send us a brief and we can guide you to a
+                suitable print method.
+              </p>
+              <a href="https://wa.me/6283174145415?text=Hi%2C%20I%27d%20like%20to%20plan%20a%20print%20run" target="_blank" rel="noopener noreferrer">
+                Plan your print run <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <nav className="work-empty__routes" aria-label="Plan a project">
+              <Link href="/services"><span>01</span><strong>Compare services</strong><span aria-hidden="true">↗</span></Link>
+              <Link href="/pricing"><span>02</span><strong>Explore pricing</strong><span aria-hidden="true">↗</span></Link>
+              <Link href="/studio"><span>03</span><strong>Meet the studio</strong><span aria-hidden="true">↗</span></Link>
+            </nav>
           </div>
         )}
         {items.length > 0 && typeof limit === "number" && items.length > limit && (
