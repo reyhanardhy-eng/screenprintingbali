@@ -1,6 +1,7 @@
 import Topbar from "@/components/Topbar";
 import Hero from "@/components/Hero";
 import HomeOverview from "@/components/HomeOverview";
+import StudioEquipment from "@/components/StudioEquipment";
 import Work from "@/components/Work";
 import Process from "@/components/Process";
 import FinalCta from "@/components/FinalCta";
@@ -23,6 +24,7 @@ export default function Home() {
       <main className="home-page">
         <Hero />
         <Reveal><HomeOverview /></Reveal>
+        <Reveal><StudioEquipment /></Reveal>
         <Reveal><Work layout="editorial" limit={6} title="The work starts in the print room." /></Reveal>
         <Reveal><Process /></Reveal>
         <Reveal><FinalCta /></Reveal>
@@ -31,4 +33,3 @@ export default function Home() {
     </>
   );
 }
-
