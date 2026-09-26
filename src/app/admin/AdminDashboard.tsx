@@ -210,14 +210,14 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     setItems(items.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   }
 
-  async function persist(row: PortfolioItem) {
+  async function persist(row: PortfolioItem, showError = true) {
     const response = await fetch("/api/admin/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(row),
     });
     if (!response.ok) {
-      flash("Could not save the portfolio item.");
+      if (showError) flash("Could not save the portfolio item.");
       return null;
     }
     return (await response.json()) as PortfolioItem;
@@ -229,8 +229,8 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     return response.json() as Promise<PortfolioItem[]>;
   }
 
-  async function handleUpload(row: PortfolioItem, file: File) {
-    if (!items || busyId !== null) return;
+  async function handleUpload(row: PortfolioItem, file: File, notify = true): Promise<boolean> {
+    if (!items || busyId !== null) return false;
     setBusyId(row.id);
     setBusyPhase("compressing");
     try {
@@ -241,19 +241,21 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
       const upload = await fetch("/api/admin/portfolio/upload", { method: "POST", body: formData });
       const uploaded = await upload.json().catch(() => ({})) as { image_url?: string; error?: string };
       if (!upload.ok || !uploaded.image_url) {
-        flash(uploaded.error || "Upload failed. Choose a JPG, PNG, or WebP image under 5 MB after compression.");
-        return;
+        if (notify) flash(uploaded.error || "Upload failed. Choose a JPG, PNG, or WebP image under 5 MB after compression.");
+        return false;
       }
       setBusyPhase("saving");
-      const saved = await persist({ ...row, image_url: uploaded.image_url });
-      if (!saved) return;
+      const saved = await persist({ ...row, image_url: uploaded.image_url }, notify);
+      if (!saved) return false;
       setItems(await reloadItems());
       const sizeNote = compressedFile.size < file.size
         ? `Compressed ${formatFileSize(file.size)} to ${formatFileSize(compressedFile.size)}. `
         : `${formatFileSize(compressedFile.size)}. `;
-      flash(`${sizeNote}Image saved and published to the website.`);
+      if (notify) flash(`${sizeNote}Image saved and published to the website.`);
+      return true;
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Could not upload or publish the image. Please try again.");
+      if (notify) flash(error instanceof Error ? error.message : "Could not upload or publish the image. Please try again.");
+      return false;
     } finally {
       setBusyId(null);
       setBusyPhase(null);
@@ -317,16 +319,34 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     }
   }
 
-  function handleAddPhoto(file: File) {
-    const newRow: PortfolioItem = {
-      id: -Date.now(),
-      title_line1: "Portfolio image",
-      title_line2: "",
-      meta: "",
-      image_url: null,
-      sort_order: items?.length ?? 0,
-    };
-    void handleUpload(newRow, file);
+  async function handleAddPhotos(files: File[]) {
+    if (!items || busyId !== null || files.length === 0) return;
+
+    let uploadedCount = 0;
+    const failedNames: string[] = [];
+    const firstSortOrder = items.length;
+
+    for (const [index, file] of files.entries()) {
+      flash(`Uploading photo ${index + 1} of ${files.length}…`);
+      const newRow: PortfolioItem = {
+        id: -(Date.now() + index),
+        title_line1: "Portfolio image",
+        title_line2: "",
+        meta: "",
+        image_url: null,
+        sort_order: firstSortOrder + index,
+      };
+      if (await handleUpload(newRow, file, false)) uploadedCount += 1;
+      else failedNames.push(file.name || `Photo ${index + 1}`);
+    }
+
+    if (failedNames.length === 0) {
+      flash(`${uploadedCount} ${uploadedCount === 1 ? "photo" : "photos"} uploaded and published.`);
+    } else {
+      const failedSummary = failedNames.slice(0, 3).join(", ");
+      const more = failedNames.length > 3 ? ` and ${failedNames.length - 3} more` : "";
+      flash(`${uploadedCount} of ${files.length} photos uploaded. Failed: ${failedSummary}${more}.`);
+    }
   }
 
   if (!items) {
@@ -336,7 +356,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   return (
     <div id="portfolio-settings" className="portfolio-manager">
       <p className="admin-sub" style={{ marginTop: -24 }}>
-        Drop a JPG, PNG, or WebP onto a photo tile, or choose a photo below it. Use × to remove only the photo; “Delete entry” removes the whole portfolio card.
+        Drop one photo onto an existing tile to replace it. Use “Add portfolio photos” to select or drop multiple photos at once. Use × to remove only the photo; “Delete entry” removes the whole portfolio card.
       </p>
       <div className="portfolio-grid">
         {items.map((r, i) => (
@@ -446,27 +466,28 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
             event.preventDefault();
             setDragOverId(null);
             const files = Array.from(event.dataTransfer.files);
-            if (files.length !== 1) {
-              flash("Drop one photo at a time.");
+            if (files.length === 0) {
+              flash("Choose one or more photos to add.");
               return;
             }
-            handleAddPhoto(files[0]);
+            void handleAddPhotos(files);
           }}
         >
           <span className="portfolio-card__add-title">
             {busyId !== null && busyId < 0
               ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
-              : "+ Add portfolio photo"}
+              : "+ Add portfolio photos"}
           </span>
-          <span className="portfolio-card__add-hint">Drop a photo here or choose a file</span>
+          <span className="portfolio-card__add-hint">Select or drop multiple photos here</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             className="portfolio-card__add-input"
             disabled={busyId !== null}
             onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) handleAddPhoto(file);
+              const files = Array.from(event.target.files ?? []);
+              if (files.length > 0) void handleAddPhotos(files);
               event.currentTarget.value = "";
             }}
           />
