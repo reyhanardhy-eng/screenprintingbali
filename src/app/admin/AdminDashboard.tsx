@@ -12,6 +12,7 @@ import {
   type Product,
 } from "@/lib/pricing-types";
 import type { PortfolioItem } from "@/lib/portfolio-types";
+import { getPortfolioCaption, isStudioEquipmentMeta, setPortfolioCategory } from "@/lib/portfolio-categories";
 import LivechatInbox from "./LivechatInbox";
 import LivechatSettings from "./LivechatSettings";
 
@@ -143,7 +144,7 @@ export default function AdminPage() {
 
       <nav className="admin-nav" aria-label="Admin settings sections">
         <a href="#pricing-settings">Price calculator</a>
-        <a href="#portfolio-settings">Portfolio</a>
+        <a href="#portfolio-settings">Portfolio &amp; studio equipment</a>
         <a href="#chat-inbox">Live chat inbox</a>
         <a href="#chatbot-settings">AI chatbot &amp; API</a>
       </nav>
@@ -193,7 +194,8 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   const [items, setItems] = useState<PortfolioItem[] | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [busyPhase, setBusyPhase] = useState<"compressing" | "uploading" | "saving" | null>(null);
-  const [dragOverId, setDragOverId] = useState<number | "new" | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | "portfolio" | "equipment" | null>(null);
+  const [bulkUploadCategory, setBulkUploadCategory] = useState<"portfolio" | "equipment" | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/portfolio", { cache: "no-store" })
@@ -319,29 +321,32 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     }
   }
 
-  async function handleAddPhotos(files: File[]) {
+  async function handleAddPhotos(files: File[], studioEquipment = false) {
     if (!items || busyId !== null || files.length === 0) return;
 
     let uploadedCount = 0;
     const failedNames: string[] = [];
     const firstSortOrder = items.length;
 
+    setBulkUploadCategory(studioEquipment ? "equipment" : "portfolio");
     for (const [index, file] of files.entries()) {
       flash(`Uploading photo ${index + 1} of ${files.length}…`);
       const newRow: PortfolioItem = {
         id: -(Date.now() + index),
-        title_line1: "Portfolio image",
+        title_line1: studioEquipment ? "Studio equipment" : "Portfolio image",
         title_line2: "",
-        meta: "",
+        meta: setPortfolioCategory("", studioEquipment),
         image_url: null,
         sort_order: firstSortOrder + index,
       };
       if (await handleUpload(newRow, file, false)) uploadedCount += 1;
       else failedNames.push(file.name || `Photo ${index + 1}`);
     }
+    setBulkUploadCategory(null);
 
     if (failedNames.length === 0) {
-      flash(`${uploadedCount} ${uploadedCount === 1 ? "photo" : "photos"} uploaded and published.`);
+      const categoryName = studioEquipment ? "studio equipment" : "portfolio";
+      flash(`${uploadedCount} ${uploadedCount === 1 ? "photo" : "photos"} uploaded to ${categoryName}.`);
     } else {
       const failedSummary = failedNames.slice(0, 3).join(", ");
       const more = failedNames.length > 3 ? ` and ${failedNames.length - 3} more` : "";
@@ -353,111 +358,21 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     return <p className="admin-sub">Loading portfolio…</p>;
   }
 
-  return (
-    <div id="portfolio-settings" className="portfolio-manager">
-      <p className="admin-sub" style={{ marginTop: -24 }}>
-        Drop one photo onto an existing tile to replace it. Use “Add portfolio photos” to select or drop multiple photos at once. Use × to remove only the photo; “Delete entry” removes the whole portfolio card.
-      </p>
-      <div className="portfolio-grid">
-        {items.map((r, i) => (
-          <div key={r.id} className="portfolio-card">
-            <div
-              className={`portfolio-card__photo${dragOverId === r.id ? " portfolio-card__photo--dragging" : ""}`}
-              onDragEnter={(event) => {
-                event.preventDefault();
-                setDragOverId(r.id);
-              }}
-              onDragOver={(event) => {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = "copy";
-                setDragOverId(r.id);
-              }}
-              onDragLeave={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverId(null);
-              }}
-              onDrop={(event) => {
-                event.preventDefault();
-                setDragOverId(null);
-                const files = Array.from(event.dataTransfer.files);
-                if (files.length !== 1) {
-                  flash("Drop one photo into each portfolio card.");
-                  return;
-                }
-                void handleUpload(r, files[0]);
-              }}
-            >
-              {r.image_url ? (
-                <img src={r.image_url} alt={r.title_line1} draggable={false} />
-              ) : (
-                <span className="portfolio-card__placeholder">
-                  <strong>No photo yet</strong>
-                  <span>Drop a JPG, PNG, or WebP here</span>
-                </span>
-              )}
-              {dragOverId === r.id && <span className="portfolio-card__drop-overlay">Drop to upload</span>}
-              {r.image_url && (
-                <button
-                  type="button"
-                  className="portfolio-card__remove-image"
-                  aria-label="Remove photo from portfolio"
-                  title="Remove photo"
-                  disabled={busyId !== null}
-                  onClick={() => void handleRemoveImage(i)}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <label className="portfolio-card__upload">
-              {busyId === r.id
-                ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
-                : r.image_url ? "Replace photo" : "Choose photo"}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="portfolio-card__file-input"
-                disabled={busyId !== null}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void handleUpload(r, file);
-                  e.currentTarget.value = "";
-                }}
-              />
-            </label>
-            <input
-              className="portfolio-card__caption"
-              placeholder="Short caption, e.g. Brand drop · 36 pcs · Plastisol"
-              value={r.meta}
-              onChange={(e) => update(i, { meta: e.target.value })}
-            />
-            <button
-              type="button"
-              className="portfolio-card__save"
-              disabled={busyId !== null}
-              onClick={() => handleCaptionSave(i)}
-            >
-              {busyId === r.id ? "Saving…" : "Save caption"}
-            </button>
-            <button
-              type="button"
-              className="portfolio-card__delete"
-              disabled={busyId !== null}
-              onClick={() => handleDelete(r)}
-            >
-              Delete entry
-            </button>
-          </div>
-        ))}
-        <label
-          className={`portfolio-card portfolio-card--add${dragOverId === "new" ? " portfolio-card--add-dragging" : ""}`}
+  function renderItemCard(r: PortfolioItem, i: number) {
+    const studioEquipment = isStudioEquipmentMeta(r.meta);
+    const caption = getPortfolioCaption(r.meta);
+    return (
+      <div key={r.id} className="portfolio-card">
+        <div
+          className={`portfolio-card__photo${dragOverId === r.id ? " portfolio-card__photo--dragging" : ""}`}
           onDragEnter={(event) => {
             event.preventDefault();
-            setDragOverId("new");
+            setDragOverId(r.id);
           }}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = "copy";
-            setDragOverId("new");
+            setDragOverId(r.id);
           }}
           onDragLeave={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverId(null);
@@ -466,33 +381,172 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
             event.preventDefault();
             setDragOverId(null);
             const files = Array.from(event.dataTransfer.files);
-            if (files.length === 0) {
-              flash("Choose one or more photos to add.");
+            if (files.length !== 1) {
+              flash("Drop one photo into each portfolio card.");
               return;
             }
-            void handleAddPhotos(files);
+            void handleUpload(r, files[0]);
           }}
         >
-          <span className="portfolio-card__add-title">
-            {busyId !== null && busyId < 0
-              ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
-              : "+ Add portfolio photos"}
-          </span>
-          <span className="portfolio-card__add-hint">Select or drop multiple photos here</span>
+          {r.image_url ? (
+            <img src={r.image_url} alt={r.title_line1} draggable={false} />
+          ) : (
+            <span className="portfolio-card__placeholder">
+              <strong>No photo yet</strong>
+              <span>Drop a JPG, PNG, or WebP here</span>
+            </span>
+          )}
+          {dragOverId === r.id && <span className="portfolio-card__drop-overlay">Drop to upload</span>}
+          {r.image_url && (
+            <button
+              type="button"
+              className="portfolio-card__remove-image"
+              aria-label="Remove photo from portfolio"
+              title="Remove photo"
+              disabled={busyId !== null}
+              onClick={() => void handleRemoveImage(i)}
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <label className="portfolio-card__upload">
+          {busyId === r.id
+            ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
+            : r.image_url ? "Replace photo" : "Choose photo"}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="portfolio-card__add-input"
+            className="portfolio-card__file-input"
             disabled={busyId !== null}
-            onChange={(event) => {
-              const files = Array.from(event.target.files ?? []);
-              if (files.length > 0) void handleAddPhotos(files);
-              event.currentTarget.value = "";
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleUpload(r, file);
+              e.currentTarget.value = "";
             }}
           />
         </label>
+        <input
+          className="portfolio-card__caption"
+          placeholder={studioEquipment ? "Equipment caption, e.g. Manual screen press" : "Short caption, e.g. Brand drop · 36 pcs · Plastisol"}
+          maxLength={studioEquipment ? 479 : 500}
+          value={caption}
+          onChange={(e) => update(i, { meta: setPortfolioCategory(e.target.value, studioEquipment) })}
+        />
+        <label className="portfolio-card__category">
+          <input
+            type="checkbox"
+            checked={studioEquipment}
+            disabled={busyId !== null}
+            onChange={(event) => update(i, { meta: setPortfolioCategory(r.meta, event.target.checked) })}
+          />
+          <span>Show in Studio Equipment section</span>
+        </label>
+        <button
+          type="button"
+          className="portfolio-card__save"
+          disabled={busyId !== null}
+          onClick={() => handleCaptionSave(i)}
+        >
+          {busyId === r.id ? "Saving…" : "Save changes"}
+        </button>
+        <button
+          type="button"
+          className="portfolio-card__delete"
+          disabled={busyId !== null}
+          onClick={() => handleDelete(r)}
+        >
+          Delete entry
+        </button>
       </div>
+    );
+  }
+
+  function renderAddCard(category: "portfolio" | "equipment") {
+    const isEquipment = category === "equipment";
+    const isDragging = dragOverId === category;
+    const active = bulkUploadCategory === category && busyId !== null && busyId < 0;
+    return (
+      <label
+        key={`add-${category}`}
+        className={`portfolio-card portfolio-card--add${isDragging ? " portfolio-card--add-dragging" : ""}`}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setDragOverId(category);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+          setDragOverId(category);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragOverId(null);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragOverId(null);
+          const files = Array.from(event.dataTransfer.files);
+          if (files.length === 0) {
+            flash("Choose one or more photos to add.");
+            return;
+          }
+          void handleAddPhotos(files, isEquipment);
+        }}
+      >
+        <span className="portfolio-card__add-title">
+          {active
+            ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
+            : isEquipment ? "+ Add studio equipment photos" : "+ Add portfolio photos"}
+        </span>
+        <span className="portfolio-card__add-hint">Select or drop multiple photos here</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="portfolio-card__add-input"
+          disabled={busyId !== null}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            if (files.length > 0) void handleAddPhotos(files, isEquipment);
+            event.currentTarget.value = "";
+          }}
+        />
+      </label>
+    );
+  }
+
+  const portfolioEntries = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !isStudioEquipmentMeta(item.meta));
+  const equipmentEntries = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => isStudioEquipmentMeta(item.meta));
+
+  return (
+    <div id="portfolio-settings" className="portfolio-manager">
+      <p className="admin-sub portfolio-manager__intro">
+        Add finished print photos and studio equipment in separate sections. Drag photos into a section or select several at once. Images are compressed before they are saved.
+      </p>
+      <section className="portfolio-manager__group" aria-labelledby="portfolio-finished-title">
+        <div className="portfolio-manager__group-heading">
+          <h2 id="portfolio-finished-title">Finished work</h2>
+          <p>Printed pieces, samples, and brand projects.</p>
+        </div>
+        <div className="portfolio-grid">
+          {portfolioEntries.map(({ item, index }) => renderItemCard(item, index))}
+          {renderAddCard("portfolio")}
+        </div>
+      </section>
+      <section className="portfolio-manager__group" aria-labelledby="portfolio-equipment-title">
+        <div className="portfolio-manager__group-heading">
+          <h2 id="portfolio-equipment-title">Studio equipment</h2>
+          <p>Photos added here appear in the “Inside Our Bali Print Room” section on the homepage.</p>
+        </div>
+        <div className="portfolio-grid">
+          {equipmentEntries.map(({ item, index }) => renderItemCard(item, index))}
+          {renderAddCard("equipment")}
+        </div>
+      </section>
     </div>
   );
 }
@@ -965,5 +1019,4 @@ function DesignSizesTable({
     </table>
   );
 }
-
 
