@@ -14,6 +14,12 @@ type Conversation = {
 type Message = { role: "user" | "assistant" | "admin"; content: string };
 type Props = { flash: (message: string) => void };
 
+function sameMessages(left: Message[], right: Message[]): boolean {
+  return left.length === right.length && left.every((message, index) =>
+    message.role === right[index].role && message.content === right[index].content
+  );
+}
+
 function shortTime(value: string): string {
   const date = new Date(value.replace(" ", "T") + (value.endsWith("Z") ? "" : "Z"));
   return Number.isNaN(date.getTime()) ? "" : date.toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
@@ -27,8 +33,10 @@ export default function LivechatInbox({ flash }: Props) {
   const [humanMode, setHumanMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const followLatestRef = useRef(true);
 
   useEffect(() => {
     let active = true;
@@ -61,6 +69,7 @@ export default function LivechatInbox({ flash }: Props) {
   }, [selectedId]);
 
   useEffect(() => {
+    followLatestRef.current = true;
     if (!selectedId) {
       setMessages([]);
       return;
@@ -72,7 +81,8 @@ export default function LivechatInbox({ flash }: Props) {
         const result = await response.json() as { conversation?: Conversation; messages?: Message[]; error?: string };
         if (!response.ok) throw new Error(result.error || "This conversation could not be opened.");
         if (!active) return;
-        setMessages(Array.isArray(result.messages) ? result.messages : []);
+        const nextMessages = Array.isArray(result.messages) ? result.messages : [];
+        setMessages((current) => sameMessages(current, nextMessages) ? current : nextMessages);
         setHumanMode(result.conversation?.humanMode === true);
         setError("");
       } catch (cause) {
@@ -88,7 +98,10 @@ export default function LivechatInbox({ flash }: Props) {
   }, [selectedId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (!followLatestRef.current) return;
+    const list = messageListRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
+    followLatestRef.current = false;
   }, [messages]);
 
   async function sendAction(action: "reply" | "takeover" | "resume_ai", message?: string) {
@@ -119,6 +132,37 @@ export default function LivechatInbox({ flash }: Props) {
     const message = draft.trim();
     if (!message || message.length > 2000) return;
     if (await sendAction("reply", message)) setDraft("");
+  }
+
+  async function handleDeleteConversation() {
+    if (!selectedId || deleting) return;
+    const confirmed = window.confirm(
+      "Permanently delete this chat room and all of its saved messages? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/chat", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: selectedId }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error || "This conversation could not be deleted.");
+
+      const remaining = conversations.filter((conversation) => conversation.id !== selectedId);
+      setConversations(remaining);
+      setMessages([]);
+      setSelectedId(remaining[0]?.id ?? "");
+      setHumanMode(false);
+      flash("Chat room and saved messages deleted.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "This conversation could not be deleted.");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -158,17 +202,36 @@ export default function LivechatInbox({ flash }: Props) {
             <>
               <div className="admin-chat-thread-top">
                 <span>Visitor {selectedId.slice(0, 6).toUpperCase()}</span>
-                {humanMode ? (
-                  <button className="admin-save-btn" type="button" disabled={sending} onClick={() => void sendAction("resume_ai")}>
-                    Resume AI
+                <div className="admin-chat-thread-actions">
+                  {humanMode ? (
+                    <button className="admin-save-btn" type="button" disabled={sending || deleting} onClick={() => void sendAction("resume_ai")}>
+                      Resume AI
+                    </button>
+                  ) : (
+                    <button className="admin-save-btn" type="button" disabled={sending || deleting} onClick={() => void sendAction("takeover")}>
+                      Take over
+                    </button>
+                  )}
+                  <button
+                    className="admin-chat-delete"
+                    type="button"
+                    disabled={deleting || sending}
+                    onClick={() => void handleDeleteConversation()}
+                  >
+                    {deleting ? "Deleting…" : "Delete chat"}
                   </button>
-                ) : (
-                  <button className="admin-save-btn" type="button" disabled={sending} onClick={() => void sendAction("takeover")}>
-                    Take over
-                  </button>
-                )}
+                </div>
               </div>
-              <div className="chat-messages chat-messages--admin" aria-live="polite" aria-label="Selected conversation">
+              <div
+                ref={messageListRef}
+                className="chat-messages chat-messages--admin"
+                aria-live="polite"
+                aria-label="Selected conversation"
+                onScroll={(event) => {
+                  const list = event.currentTarget;
+                  followLatestRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 64;
+                }}
+              >
                 {messages.map((message, index) => {
                   const displayRole = message.role === "user" ? "visitor" : message.role;
                   const label = message.role === "user" ? "Customer" : message.role === "admin" ? "You" : "AI";
@@ -180,7 +243,6 @@ export default function LivechatInbox({ flash }: Props) {
                   );
                 })}
                 {messages.length === 0 && <p className="admin-chat-empty">No messages in this conversation.</p>}
-                <div ref={bottomRef} />
               </div>
               <form className="chat-form" onSubmit={handleSend}>
                 <input
