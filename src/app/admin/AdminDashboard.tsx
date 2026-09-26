@@ -15,6 +15,75 @@ import type { PortfolioItem } from "@/lib/portfolio-types";
 import LivechatInbox from "./LivechatInbox";
 import LivechatSettings from "./LivechatSettings";
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+function createWebpBlob(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("This browser could not compress the image."));
+    }, "image/webp", quality);
+  });
+}
+
+async function compressPortfolioPhoto(file: File): Promise<File> {
+  if (file.size < 1) throw new Error("The selected image is empty.");
+  if (file.size > 40 * 1024 * 1024) throw new Error("Choose a photo smaller than 40 MB to compress safely.");
+  if (!/\.(?:jpe?g|png|webp)$/i.test(file.name)) throw new Error("Use a JPG, PNG, or WebP image.");
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    if (file.size <= MAX_UPLOAD_BYTES) return file;
+    throw new Error("This photo could not be opened for compression. Try a JPG, PNG, or WebP image.");
+  }
+
+  try {
+    if (bitmap.width * bitmap.height > 100_000_000) {
+      throw new Error("This image has too many pixels to compress safely. Please resize it first.");
+    }
+
+    const maxEdges = [1800, 1500, 1200];
+    const qualities = [0.84, 0.76, 0.68];
+    let best: Blob | null = null;
+
+    for (const maxEdge of maxEdges) {
+      const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("This browser could not prepare the image for compression.");
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of qualities) {
+        const blob = await createWebpBlob(canvas, quality);
+        if (!best || blob.size < best.size) best = blob;
+        if (blob.size <= MAX_UPLOAD_BYTES * 0.95 && blob.size < file.size) {
+          const baseName = file.name.replace(/\.[^.]+$/, "") || "portfolio-photo";
+          return new File([blob], `${baseName}.webp`, { type: "image/webp", lastModified: file.lastModified });
+        }
+      }
+    }
+
+    if (file.size <= MAX_UPLOAD_BYTES && (!best || best.size >= file.size)) return file;
+    if (best && best.size <= MAX_UPLOAD_BYTES) {
+      const baseName = file.name.replace(/\.[^.]+$/, "") || "portfolio-photo";
+      return new File([best], `${baseName}.webp`, { type: "image/webp", lastModified: file.lastModified });
+    }
+    throw new Error("The compressed photo is still over 5 MB. Please choose a smaller image.");
+  } finally {
+    bitmap.close();
+  }
+}
+
+function formatFileSize(bytes: number) {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const [data, setData] = useState<PricingData | null>(null);
@@ -123,6 +192,7 @@ export default function AdminPage() {
 function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
   const [items, setItems] = useState<PortfolioItem[] | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyPhase, setBusyPhase] = useState<"compressing" | "uploading" | "saving" | null>(null);
   const [dragOverId, setDragOverId] = useState<number | "new" | null>(null);
 
   useEffect(() => {
@@ -161,32 +231,32 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
 
   async function handleUpload(row: PortfolioItem, file: File) {
     if (!items || busyId !== null) return;
-    if (file.size < 1 || file.size > 5 * 1024 * 1024) {
-      flash("Choose an image smaller than 5 MB.");
-      return;
-    }
-    if (!/\.(?:jpe?g|png|webp)$/i.test(file.name)) {
-      flash("Use a JPG, PNG, or WebP image.");
-      return;
-    }
     setBusyId(row.id);
+    setBusyPhase("compressing");
     try {
+      const compressedFile = await compressPortfolioPhoto(file);
+      setBusyPhase("uploading");
       const formData = new FormData();
-      formData.set("file", file);
+      formData.set("file", compressedFile);
       const upload = await fetch("/api/admin/portfolio/upload", { method: "POST", body: formData });
       const uploaded = await upload.json().catch(() => ({})) as { image_url?: string; error?: string };
       if (!upload.ok || !uploaded.image_url) {
-        flash(uploaded.error || "Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
+        flash(uploaded.error || "Upload failed. Choose a JPG, PNG, or WebP image under 5 MB after compression.");
         return;
       }
+      setBusyPhase("saving");
       const saved = await persist({ ...row, image_url: uploaded.image_url });
       if (!saved) return;
       setItems(await reloadItems());
-      flash("Image saved and published to the website.");
-    } catch {
-      flash("Could not upload or publish the image. Please try again.");
+      const sizeNote = compressedFile.size < file.size
+        ? `Compressed ${formatFileSize(file.size)} to ${formatFileSize(compressedFile.size)}. `
+        : `${formatFileSize(compressedFile.size)}. `;
+      flash(`${sizeNote}Image saved and published to the website.`);
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Could not upload or publish the image. Please try again.");
     } finally {
       setBusyId(null);
+      setBusyPhase(null);
     }
   }
 
@@ -319,7 +389,9 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               )}
             </div>
             <label className="portfolio-card__upload">
-              {busyId === r.id ? "Saving…" : r.image_url ? "Replace photo" : "Choose photo"}
+              {busyId === r.id
+                ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
+                : r.image_url ? "Replace photo" : "Choose photo"}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
@@ -381,7 +453,11 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
             handleAddPhoto(files[0]);
           }}
         >
-          <span className="portfolio-card__add-title">+ Add portfolio photo</span>
+          <span className="portfolio-card__add-title">
+            {busyId !== null && busyId < 0
+              ? busyPhase === "compressing" ? "Compressing…" : busyPhase === "uploading" ? "Uploading…" : "Saving…"
+              : "+ Add portfolio photo"}
+          </span>
           <span className="portfolio-card__add-hint">Drop a photo here or choose a file</span>
           <input
             type="file"
@@ -868,4 +944,5 @@ function DesignSizesTable({
     </table>
   );
 }
+
 
