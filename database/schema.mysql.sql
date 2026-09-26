@@ -182,6 +182,7 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE TABLE IF NOT EXISTS ai_chat_sessions (
   id CHAR(36) NOT NULL PRIMARY KEY,
   token_hash CHAR(64) NOT NULL UNIQUE,
+  human_mode TINYINT(1) NOT NULL DEFAULT 0,
   expires_at DATETIME NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -191,7 +192,7 @@ CREATE TABLE IF NOT EXISTS ai_chat_sessions (
 CREATE TABLE IF NOT EXISTS ai_chat_messages (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   session_id CHAR(36) NOT NULL,
-  role ENUM('user', 'assistant') NOT NULL,
+  role ENUM('user', 'assistant', 'admin') NOT NULL,
   body TEXT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX ai_chat_messages_session_idx (session_id, id),
@@ -259,3 +260,4 @@ INSERT INTO design_sizes (slug,label,dim,area_cm2,multiplier,sort_order) VALUES
   ('small','Small','A6, ~10x15cm',150,0.6,1), ('medium','Medium','A5, ~15x21cm',315,1.0,2),
   ('large','Large','A4, ~21x30cm',630,1.5,3), ('xl','XL','A3, ~30x42cm',1260,2.2,4)
 ON DUPLICATE KEY UPDATE slug = VALUES(slug);
+

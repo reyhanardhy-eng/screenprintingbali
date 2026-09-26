@@ -152,41 +152,50 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
     return (await response.json()) as PortfolioItem;
   }
 
+  async function reloadItems() {
+    const response = await fetch("/api/admin/portfolio", { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to refresh portfolio.");
+    return response.json() as Promise<PortfolioItem[]>;
+  }
+
   async function handleUpload(i: number, file: File) {
     if (!items) return;
     const row = items[i];
     setBusyId(row.id);
-    const formData = new FormData();
-    formData.set("file", file);
-    const upload = await fetch("/api/admin/portfolio/upload", { method: "POST", body: formData });
-    const uploaded = upload.ok ? (await upload.json()) as { image_url: string } : null;
-
-    if (!uploaded) {
-      flash("Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
-      setBusyId(null);
-      return;
-    }
-
-    const saved = await persist({ ...row, image_url: uploaded.image_url });
-    if (saved) {
-      const refreshed = await fetch("/api/admin/portfolio", { cache: "no-store" }).then((res) => res.json() as Promise<PortfolioItem[]>);
-      setItems(refreshed);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const upload = await fetch("/api/admin/portfolio/upload", { method: "POST", body: formData });
+      if (!upload.ok) {
+        flash("Upload failed. Use a JPG, PNG, or WebP image up to 5 MB.");
+        return;
+      }
+      const uploaded = await upload.json() as { image_url: string };
+      const saved = await persist({ ...row, image_url: uploaded.image_url });
+      if (!saved) return;
+      setItems(await reloadItems());
       flash("Image saved and published to the website.");
+    } catch {
+      flash("Could not upload or publish the image. Please try again.");
+    } finally {
+      setBusyId(null);
     }
-    setBusyId(null);
   }
 
   async function handleCaptionSave(i: number) {
     if (!items) return;
     const row = items[i];
     setBusyId(row.id);
-    const saved = await persist(row);
-    if (saved) {
-      const refreshed = await fetch("/api/admin/portfolio", { cache: "no-store" }).then((res) => res.json() as Promise<PortfolioItem[]>);
-      setItems(refreshed);
+    try {
+      const saved = await persist(row);
+      if (!saved) return;
+      setItems(await reloadItems());
       flash("Caption saved and published to the website.");
+    } catch {
+      flash("Could not save the portfolio item. Please try again.");
+    } finally {
+      setBusyId(null);
     }
-    setBusyId(null);
   }
 
   async function handleDelete(row: PortfolioItem) {
@@ -194,16 +203,23 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
       setItems((items ?? []).filter((r) => r !== row));
       return;
     }
-    const response = await fetch("/api/admin/portfolio", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: row.id }),
-    });
-    if (!response.ok) {
-      flash("Could not delete the portfolio item.");
-      return;
+    setBusyId(row.id);
+    try {
+      const response = await fetch("/api/admin/portfolio", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: row.id }),
+      });
+      if (!response.ok) {
+        flash("Could not delete the portfolio item.");
+        return;
+      }
+      setItems((items) => (items ?? []).filter((item) => item.id !== row.id));
+    } catch {
+      flash("Could not delete the portfolio item. Please try again.");
+    } finally {
+      setBusyId(null);
     }
-    setItems((items ?? []).filter((r) => r.id !== row.id));
   }
 
   function addCard() {
@@ -241,7 +257,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
               {busyId === r.id ? "Saving…" : r.image_url ? "Replace image" : "Upload image"}
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 disabled={busyId !== null}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -267,6 +283,7 @@ function PortfolioManager({ flash }: { flash: (msg: string) => void }) {
             <button
               type="button"
               className="portfolio-card__delete"
+              disabled={busyId !== null}
               onClick={() => handleDelete(r)}
             >
               Delete
@@ -749,3 +766,4 @@ function DesignSizesTable({
     </table>
   );
 }
+

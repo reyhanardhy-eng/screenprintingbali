@@ -25,6 +25,7 @@ type ConversationRow = RowDataPacket & {
 };
 
 let schemaPromise: Promise<void> | undefined;
+let lastExpiredSessionCleanupAt = 0;
 
 export async function ensureLivechatHistoryTables(): Promise<void> {
   schemaPromise ??= (async () => {
@@ -66,25 +67,46 @@ export async function ensureLivechatHistoryTables(): Promise<void> {
   await schemaPromise;
 }
 
+export async function getExistingLivechatSession(cookieValue?: string): Promise<{
+  id: string;
+  token: string;
+} | null> {
+  await ensureLivechatHistoryTables();
+
+  if (!cookieValue || !/^[A-Za-z0-9_-]{40,50}$/.test(cookieValue)) return null;
+
+  const tokenHash = sha256(cookieValue);
+  const existing = await rows<SessionRow>(
+    "SELECT id FROM ai_chat_sessions WHERE token_hash = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1",
+    [tokenHash]
+  );
+  if (!existing[0]) return null;
+
+  await run(
+    "UPDATE ai_chat_sessions SET expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 180 DAY) WHERE id = ?",
+    [existing[0].id]
+  );
+  return { id: existing[0].id, token: cookieValue };
+}
+
 export async function getOrCreateLivechatSession(cookieValue?: string): Promise<{
   id: string;
   token: string;
 }> {
-  await ensureLivechatHistoryTables();
-  await run("DELETE FROM ai_chat_sessions WHERE expires_at <= UTC_TIMESTAMP() LIMIT 100");
+  const existing = await getExistingLivechatSession(cookieValue);
+  if (existing) return existing;
 
-  if (cookieValue && /^[A-Za-z0-9_-]{40,50}$/.test(cookieValue)) {
-    const tokenHash = sha256(cookieValue);
-    const existing = await rows<SessionRow>(
-      "SELECT id FROM ai_chat_sessions WHERE token_hash = ? AND expires_at > UTC_TIMESTAMP() LIMIT 1",
-      [tokenHash]
-    );
-    if (existing[0]) {
-      await run(
-        "UPDATE ai_chat_sessions SET expires_at = DATE_ADD(UTC_TIMESTAMP(), INTERVAL 180 DAY) WHERE id = ?",
-        [existing[0].id]
-      );
-      return { id: existing[0].id, token: cookieValue };
+  // Expired sessions are cleaned in bounded batches, at most once an hour per
+  // app process. Public history polling never creates a session, so this runs
+  // only when a visitor actually sends a message without a valid session.
+  const now = Date.now();
+  if (now - lastExpiredSessionCleanupAt >= 60 * 60 * 1000) {
+    lastExpiredSessionCleanupAt = now;
+    try {
+      await run("DELETE FROM ai_chat_sessions WHERE expires_at <= UTC_TIMESTAMP() LIMIT 1000");
+    } catch {
+      // Session creation should remain available if periodic cleanup fails.
+      lastExpiredSessionCleanupAt = now - 55 * 60 * 1000;
     }
   }
 
@@ -310,3 +332,4 @@ async function trimLivechatMessages(sessionId: string): Promise<void> {
     // Message persistence has already committed; retention cleanup can retry later.
   }
 }
+

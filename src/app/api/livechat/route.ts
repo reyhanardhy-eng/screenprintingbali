@@ -8,6 +8,7 @@ import { LIVECHAT_RESPONSE_STYLE_RULES, LIVECHAT_SAFETY_RULES } from "@/lib/live
 import { assertSameOrigin, checkRateLimit, clientAddress, sha256 } from "@/lib/security";
 import {
   getLivechatHistory,
+  getExistingLivechatSession,
   getOrCreateLivechatSession,
   isLivechatHumanMode,
   LIVECHAT_COOKIE_MAX_AGE,
@@ -123,14 +124,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(settings, { headers: { "Cache-Control": "no-store" } });
     }
 
-    const session = await getOrCreateLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
-    const messages = cleanAssistantHistory(await getLivechatHistory(session.id));
-    const humanMode = await isLivechatHumanMode(session.id);
+    const session = await getExistingLivechatSession(request.cookies.get(LIVECHAT_COOKIE_NAME)?.value);
+    const messages = session
+      ? cleanAssistantHistory(await getLivechatHistory(session.id))
+      : [];
+    const humanMode = session ? await isLivechatHumanMode(session.id) : false;
     const response = NextResponse.json(
       { ...settings, messages, humanMode },
       { headers: { "Cache-Control": "no-store" } }
     );
-    setSessionCookie(response, session.token);
+    if (session) setSessionCookie(response, session.token);
     return response;
   } catch {
     if (request.nextUrl.searchParams.get("history") === "1") {
@@ -250,3 +253,4 @@ export async function POST(request: NextRequest) {
     return responseError("Chat is temporarily unavailable. Please contact us on WhatsApp.", 503);
   }
 }
+

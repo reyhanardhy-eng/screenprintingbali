@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { RowDataPacket } from "mysql2/promise";
 import { adminApiResponse } from "@/lib/admin-api";
 import { rows, run } from "@/lib/db";
 import { assertSameOrigin, clientAddress, checkRateLimit, sha256 } from "@/lib/security";
@@ -17,6 +18,19 @@ const portfolioSchema = z.object({
   image_url: z.string().max(1000).nullable(),
   sort_order: z.number().int().min(0).max(100000),
 }).strict();
+
+async function deleteImageIfUnused(imageUrl: string | null): Promise<void> {
+  if (!imageUrl) return;
+  try {
+    const references = await rows<RowDataPacket & { total: number }>(
+      "SELECT COUNT(*) AS total FROM portfolio_items WHERE image_url = ?",
+      [imageUrl]
+    );
+    if (Number(references[0]?.total ?? 0) === 0) await deletePortfolioImage(imageUrl);
+  } catch (error) {
+    console.error("[api/admin/portfolio] Could not clean up an unused image", error);
+  }
+}
 
 export async function GET() {
   const { response } = await adminApiResponse();
@@ -53,6 +67,7 @@ export async function POST(request: NextRequest) {
 
   try {
     let id: number;
+    let previousImageUrl: string | null = null;
     if (item.id < 0) {
       const result = await run(
         `INSERT INTO portfolio_items (title_line1, title_line2, meta, image_url, sort_order)
@@ -61,6 +76,12 @@ export async function POST(request: NextRequest) {
       );
       id = result.insertId;
     } else {
+      const existing = await rows<RowDataPacket & { image_url: string | null }>(
+        "SELECT image_url FROM portfolio_items WHERE id = ? LIMIT 1",
+        [item.id]
+      );
+      if (!existing[0]) return NextResponse.json({ error: "Portfolio item not found." }, { status: 404 });
+      previousImageUrl = existing[0].image_url;
       await run(
         `UPDATE portfolio_items SET title_line1 = ?, title_line2 = ?, meta = ?, image_url = ?, sort_order = ? WHERE id = ?`,
         [item.title_line1, item.title_line2, item.meta, item.image_url, item.sort_order, item.id]
@@ -75,6 +96,7 @@ export async function POST(request: NextRequest) {
       "INSERT INTO audit_log (actor_id, action, target_type, target_id, ip_hash) VALUES (?, 'portfolio.save', 'portfolio_item', ?, ?)",
       [user.id, String(id), sha256(clientAddress(request))]
     );
+    if (previousImageUrl !== item.image_url) await deleteImageIfUnused(previousImageUrl);
     revalidatePath("/");
     return NextResponse.json(saved[0] as PortfolioItem);
   } catch {
@@ -88,6 +110,9 @@ export async function DELETE(request: NextRequest) {
   }
   const { user, response } = await adminApiResponse();
   if (response || !user) return response;
+  if (!(await checkRateLimit(`portfolio:${user.id}`, 30, 60))) {
+    return NextResponse.json({ error: "Too many changes. Try again shortly." }, { status: 429 });
+  }
   let body: unknown;
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
@@ -99,15 +124,17 @@ export async function DELETE(request: NextRequest) {
       "SELECT id, title_line1, title_line2, meta, image_url, sort_order FROM portfolio_items WHERE id = ? LIMIT 1",
       [parsed.data.id]
     );
+    if (!old[0]) return NextResponse.json({ error: "Portfolio item not found." }, { status: 404 });
     await run("DELETE FROM portfolio_items WHERE id = ?", [parsed.data.id]);
-    await deletePortfolioImage(old[0]?.image_url ?? null);
     await run(
       "INSERT INTO audit_log (actor_id, action, target_type, target_id, ip_hash) VALUES (?, 'portfolio.delete', 'portfolio_item', ?, ?)",
       [user.id, String(parsed.data.id), sha256(clientAddress(request))]
     );
+    await deleteImageIfUnused(old[0].image_url);
     revalidatePath("/");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Could not delete portfolio item." }, { status: 500 });
   }
 }
+
