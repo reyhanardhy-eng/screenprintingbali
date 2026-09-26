@@ -153,6 +153,38 @@ export async function getAdminLivechatMessages(sessionId: string): Promise<Store
   return found.map((message) => ({ role: message.role, content: message.body }));
 }
 
+export async function deleteAdminLivechatConversation(
+  sessionId: string,
+  actorId: string,
+  ipHash: string
+): Promise<boolean> {
+  await ensureLivechatHistoryTables();
+  const connection = await getDb().getConnection();
+  try {
+    await connection.beginTransaction();
+    const [sessionRows] = await connection.execute<SessionRow[]>(
+      "SELECT id, human_mode FROM ai_chat_sessions WHERE id = ? FOR UPDATE",
+      [sessionId]
+    );
+    if (!sessionRows[0]) {
+      await connection.commit();
+      return false;
+    }
+    await connection.execute("DELETE FROM ai_chat_sessions WHERE id = ?", [sessionId]);
+    await connection.execute(
+      "INSERT INTO audit_log (actor_id, action, target_type, target_id, ip_hash) VALUES (?, 'chat.delete', 'ai_chat_session', ?, ?)",
+      [actorId, sessionId, ipHash]
+    );
+    await connection.commit();
+    return true;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 export async function isLivechatHumanMode(sessionId: string): Promise<boolean> {
   await ensureLivechatHistoryTables();
   const found = await rows<SessionRow>(
