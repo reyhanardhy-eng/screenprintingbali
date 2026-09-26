@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const METHODS = [
   {
     num: "M / 01",
@@ -78,6 +80,11 @@ export default function Methods() {
             </div>
           ))}
         </div>
+        <nav className="methods__links" aria-label="Detailed service pages">
+          <Link href="/screen-printing-bali">Bulk screen printing for clothing brands <span aria-hidden="true">↗</span></Link>
+          <Link href="/dtf-printing-bali">DTF printing for samples and short runs <span aria-hidden="true">↗</span></Link>
+          <Link href="/apparel-brand-starter-bali">Apparel Brand Starter in Bali <span aria-hidden="true">↗</span></Link>
+        </nav>
       </div>
     </section>
   );

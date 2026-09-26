@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Hero() {
   return (
     <section className="hero">
@@ -17,17 +19,12 @@ export default function Hero() {
           </span>
         </h1>
         <p className="hero__sub">
-          A design-led screen printing &amp; garment studio for the drop
-          you&apos;ve been planning. In-house production, no middlemen.
-          Message us on WhatsApp and we&apos;ll handle the rest.
+          A design-led printing and garment studio in Bali. Explore our
+          services, see real production work, and get a quote for your brand.
         </p>
         <div className="hero__cta">
-          <a href="#pricing" className="btn">
-            Start your order →
-          </a>
-          <a href="#work" className="btn btn--ghost">
-            See our work →
-          </a>
+          <Link href="/services" className="btn">Explore services →</Link>
+          <Link href="/work" className="btn btn--ghost">See our work →</Link>
         </div>
       </div>
     </section>

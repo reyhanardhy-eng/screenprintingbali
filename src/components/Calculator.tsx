@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect -- These effects reconcile dependent calculator selections after live pricing loads or a parent option changes. */
 
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import type { PricingData, Product, Fabric, DesignSize } from "@/lib/pricing-types";
 
 const MAX_COLORS = 4;
@@ -22,6 +23,30 @@ type CalcState = {
   sizeBack: string;
   qty: number;
 };
+
+function CalcOption({
+  active,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`calc-opt${active ? " active" : ""}${disabled ? " disabled" : ""}`}
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
 
 function fmt(n: number) {
   return "Rp " + Math.round(n).toLocaleString("id-ID");
@@ -324,30 +349,30 @@ function CalculatorReady({
           <div className="calc__form">
             <div className="calc-field">
               <label className="calc-field__label">01 / Product</label>
-              <div className="calc-options">
+              <div className="calc-options" role="group" aria-label="Product">
                 {data.products.map((p) => (
-                  <div
+                  <CalcOption
                     key={p.slug}
-                    className={`calc-opt${p.slug === state.product ? " active" : ""}`}
+                    active={p.slug === state.product}
                     onClick={() => set("product", p.slug)}
                   >
                     {p.label}
-                  </div>
+                  </CalcOption>
                 ))}
               </div>
             </div>
 
             <div className="calc-field">
               <label className="calc-field__label">02 / Fabric</label>
-              <div className="calc-options">
+              <div className="calc-options" role="group" aria-label="Fabric">
                 {fabricsForProduct.map((f) => (
-                  <div
+                  <CalcOption
                     key={f.value}
-                    className={`calc-opt${f.value === state.fabric ? " active" : ""}`}
+                    active={f.value === state.fabric}
                     onClick={() => set("fabric", f.value)}
                   >
                     {f.label}
-                  </div>
+                  </CalcOption>
                 ))}
               </div>
             </div>
@@ -355,16 +380,16 @@ function CalculatorReady({
             {product.has_bag_size_option && (
               <div className="calc-field">
                 <label className="calc-field__label">03 / Bag size</label>
-                <div className="calc-options">
+                <div className="calc-options" role="group" aria-label="Bag size">
                   {data.bagSizes.map((b) => (
-                    <div
+                    <CalcOption
                       key={b.slug}
-                      className={`calc-opt${b.slug === state.bagSize ? " active" : ""}`}
+                      active={b.slug === state.bagSize}
                       onClick={() => set("bagSize", b.slug)}
                     >
                       {b.label}
                       <small>{b.dim}</small>
-                    </div>
+                    </CalcOption>
                   ))}
                 </div>
               </div>
@@ -373,15 +398,15 @@ function CalculatorReady({
             {product.has_cut_option && (
               <div className="calc-field">
                 <label className="calc-field__label">03 / Cut</label>
-                <div className="calc-options">
+                <div className="calc-options" role="group" aria-label="Cut">
                   {data.cuts.map((c) => (
-                    <div
+                    <CalcOption
                       key={c.slug}
-                      className={`calc-opt${c.slug === state.cut ? " active" : ""}`}
+                      active={c.slug === state.cut}
                       onClick={() => set("cut", c.slug)}
                     >
                       {c.label}
-                    </div>
+                    </CalcOption>
                   ))}
                 </div>
               </div>
@@ -389,20 +414,19 @@ function CalculatorReady({
 
             <div className="calc-field">
               <label className="calc-field__label">04 / Print method</label>
-              <div className="calc-options">
+              <div className="calc-options" role="group" aria-label="Print method">
                 {methodsForProduct.map((m) => {
                   const disabled = state.qty < m.moq;
                   return (
-                    <div
+                    <CalcOption
                       key={m.slug}
-                      className={`calc-opt${m.slug === state.method ? " active" : ""}${
-                        disabled ? " disabled" : ""
-                      }`}
-                      onClick={() => !disabled && set("method", m.slug)}
+                      active={m.slug === state.method}
+                      disabled={disabled}
+                      onClick={() => set("method", m.slug)}
                     >
                       {m.label}
                       <small>{m.moq > 1 ? `${m.moq} pcs min` : "No minimum"}</small>
-                    </div>
+                    </CalcOption>
                   );
                 })}
               </div>
@@ -432,11 +456,11 @@ function CalculatorReady({
 
             <div className="calc-field">
               <label className="calc-field__label">06 / Placement</label>
-              <div className="calc-options">
+              <div className="calc-options" role="group" aria-label="Print placement">
                 {(["front", "back", "both"] as Position[]).map((pos) => (
-                  <div
+                  <CalcOption
                     key={pos}
-                    className={`calc-opt${state.position === pos ? " active" : ""}`}
+                    active={state.position === pos}
                     onClick={() => set("position", pos)}
                   >
                     {pos === "front"
@@ -444,7 +468,7 @@ function CalculatorReady({
                       : pos === "back"
                       ? "Back only"
                       : "Front and back"}
-                  </div>
+                  </CalcOption>
                 ))}
               </div>
             </div>
@@ -454,45 +478,45 @@ function CalculatorReady({
               {state.position === "both" ? (
                 <div>
                   <label className="calc-field__sublabel">Front</label>
-                  <div className="calc-options">
+                  <div className="calc-options" role="group" aria-label="Front design size">
                     {data.designSizes.map((s) => (
-                      <div
+                      <CalcOption
                         key={s.slug}
-                        className={`calc-opt${s.slug === state.sizeFront ? " active" : ""}`}
+                        active={s.slug === state.sizeFront}
                         onClick={() => set("sizeFront", s.slug)}
                       >
                         {s.label}
                         <small>{s.dim}</small>
-                      </div>
+                      </CalcOption>
                     ))}
                   </div>
                   <label className="calc-field__sublabel" style={{ marginTop: 16 }}>
                     Back
                   </label>
-                  <div className="calc-options">
+                  <div className="calc-options" role="group" aria-label="Back design size">
                     {data.designSizes.map((s) => (
-                      <div
+                      <CalcOption
                         key={s.slug}
-                        className={`calc-opt${s.slug === state.sizeBack ? " active" : ""}`}
+                        active={s.slug === state.sizeBack}
                         onClick={() => set("sizeBack", s.slug)}
                       >
                         {s.label}
                         <small>{s.dim}</small>
-                      </div>
+                      </CalcOption>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="calc-options">
+                <div className="calc-options" role="group" aria-label="Design size">
                   {data.designSizes.map((s) => (
-                    <div
+                    <CalcOption
                       key={s.slug}
-                      className={`calc-opt${s.slug === state.size ? " active" : ""}`}
+                      active={s.slug === state.size}
                       onClick={() => set("size", s.slug)}
                     >
                       {s.label}
                       <small>{s.dim}</small>
-                    </div>
+                    </CalcOption>
                   ))}
                 </div>
               )}

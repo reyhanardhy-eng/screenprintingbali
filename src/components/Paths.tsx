@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Paths() {
   return (
     <section id="paths">
@@ -36,9 +38,9 @@ export default function Paths() {
               </li>
             </ul>
             <div className="door__cta">
-              <a href="#pricing" className="btn">
+              <Link href="/pricing" className="btn">
                 See pricing →
-              </a>
+              </Link>
             </div>
           </article>
 

@@ -1,30 +1,20 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AIChatWidget from "@/components/AIChatWidget";
+import { localizedHomeAlternates } from "@/lib/seo-metadata";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
   title: {
-    default: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
+    default: "Custom Apparel Printing in Bali for Clothing Brands",
     template: "%s | Screenprinting Bali",
   },
   description:
-    "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp. From 1 piece to full drops.",
-  keywords: [
-    "screen printing Bali",
-    "screenprinting Bali",
-    "custom t-shirt printing Bali",
-    "DTF printing Bali",
-    "custom shirts Bali",
-    "screen printing Bali",
-    "clothing brand Bali",
-    "custom apparel Bali",
-    "print shop Bali",
-    "custom tote bags Bali",
-  ],
+    "In-house screen printing, DTF, embroidery, and garment finishing in Bali for brand drops and merchandise. Check minimums and request a WhatsApp quote.",
   authors: [{ name: "Screenprinting Bali" }],
   alternates: {
     canonical: "https://screenprintingbali.com",
+    languages: localizedHomeAlternates,
   },
   robots: {
     index: true,
@@ -35,9 +25,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
+    title: "Custom Apparel Printing in Bali for Clothing Brands",
     description:
-      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp.",
+      "In-house screen printing, DTF, embroidery, and garment finishing in Bali for brand drops and merchandise. Request a WhatsApp quote.",
     url: "https://screenprintingbali.com",
     siteName: "Screenprinting Bali",
     type: "website",
@@ -46,9 +36,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Screenprinting Bali: Custom Apparel Printing, Made In-House",
+    title: "Custom Apparel Printing in Bali for Clothing Brands",
     description:
-      "Premium screen printing & DTF studio in Bali for your own clothing brand. In-house production, no middlemen. Order instantly on WhatsApp.",
+      "In-house screen printing, DTF, embroidery, and garment finishing in Bali for brand drops and merchandise.",
     images: ["/images/spb_logo.png"],
   },
   icons: {
@@ -72,7 +62,6 @@ const jsonLd = {
   url: "https://screenprintingbali.com",
   image: "https://screenprintingbali.com/images/spb_logo.png",
   telephone: "+6283174145415",
-  priceRange: "$$",
   areaServed: "Bali, Indonesia",
   address: {
     "@type": "PostalAddress",

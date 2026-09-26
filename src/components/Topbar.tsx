@@ -1,10 +1,20 @@
 import Image from "next/image";
+import Link from "next/link";
+
+const NAV_LINKS = [
+  ["Services", "/services"],
+  ["Work", "/work"],
+  ["Pricing", "/pricing"],
+  ["Studio", "/studio"],
+  ["FAQ", "/faq"],
+  ["Contact", "/contact"],
+] as const;
 
 export default function Topbar() {
   return (
     <header className="topbar">
       <div className="container topbar__inner">
-        <a href="#" className="logo">
+        <Link href="/" className="logo" aria-label="Screenprinting Bali home">
           <Image
             src="/images/spb_logo_nav.png"
             alt="Screenprinting Bali"
@@ -16,14 +26,18 @@ export default function Topbar() {
             <span>Screenprinting</span>
             <span>Bali / Studio</span>
           </span>
-        </a>
-        <nav className="nav">
-          <a href="#methods">Methods</a>
-          <a href="#calculator">Price calculator</a>
-          <a href="#work">Work</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
+        </Link>
+        <nav className="nav" aria-label="Main navigation">
+          {NAV_LINKS.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
         </nav>
+        <details className="mobile-menu">
+          <summary aria-label="Open navigation menu">Menu <span aria-hidden="true">☰</span></summary>
+          <nav aria-label="Mobile navigation">
+            {NAV_LINKS.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
+            <Link href="/id" lang="id">Bahasa Indonesia</Link>
+            <Link href="/zh-cn" lang="zh-Hans">简体中文</Link>
+          </nav>
+        </details>
         <a
           href="https://wa.me/6283174145415?text=Hi%2C%20I%27d%20like%20to%20ask%20about%20a%20print%20order"
           target="_blank"

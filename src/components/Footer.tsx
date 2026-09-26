@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -23,10 +24,15 @@ export default function Footer() {
           </div>
           <div className="footer__col">
             <h5>Studio</h5>
-            <a href="#methods">Methods</a>
-            <a href="#work">Work</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#faq">FAQ</a>
+            <Link href="/services">Services</Link>
+            <Link href="/work">Portfolio</Link>
+            <Link href="/pricing">Pricing &amp; calculator</Link>
+            <Link href="/studio">Studio</Link>
+            <Link href="/faq">FAQ</Link>
+            <Link href="/contact">Contact</Link>
+            <Link href="/screen-printing-bali">Screen printing for brands</Link>
+            <Link href="/dtf-printing-bali">DTF printing</Link>
+            <Link href="/apparel-brand-starter-bali">Brand Starter</Link>
           </div>
           <div className="footer__col">
             <h5>Find us</h5>
@@ -54,6 +60,12 @@ export default function Footer() {
         <div className="footer__legal">
           <span>© 2026 Screenprinting Bali</span>
           <span>Designed &amp; printed in Bali</span>
+          <nav className="footer__languages" aria-label="Choose language">
+            <span>Language</span>
+            <Link href="/">English</Link>
+            <Link href="/id" lang="id">Bahasa Indonesia</Link>
+            <Link href="/zh-cn" lang="zh-Hans">简体中文</Link>
+          </nav>
         </div>
       </div>
     </footer>
