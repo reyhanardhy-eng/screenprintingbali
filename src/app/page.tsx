@@ -20,10 +20,10 @@ export default function Home() {
   return (
     <>
       <Topbar />
-      <main>
+      <main className="home-page">
         <Hero />
         <Reveal><HomeOverview /></Reveal>
-        <Reveal><Work layout="grid" limit={6} title="Made in our Bali studio." /></Reveal>
+        <Reveal><Work layout="editorial" limit={6} title="The work starts in the print room." /></Reveal>
         <Reveal><Process /></Reveal>
         <Reveal><FinalCta /></Reveal>
       </main>
@@ -31,3 +31,4 @@ export default function Home() {
     </>
   );
 }
+
