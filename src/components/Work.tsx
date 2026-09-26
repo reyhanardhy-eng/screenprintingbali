@@ -2,19 +2,22 @@ import Image from "next/image";
 import { fetchPortfolioItems } from "@/lib/portfolio";
 import type { PortfolioItem } from "@/lib/portfolio-types";
 import Link from "next/link";
+import { getPortfolioCaption, isStudioEquipmentMeta } from "@/lib/portfolio-categories";
 
 function WorkItem({ item, className = "" }: { item: PortfolioItem; className?: string }) {
+  const caption = getPortfolioCaption(item.meta);
   return (
     <div className={`work-item ${className}`.trim()}>
       <Image
         src={item.image_url!}
-        alt={`${item.title_line1} ${item.title_line2} ${item.meta}`.trim()}
+        alt={`${item.title_line1} ${item.title_line2} ${caption}`.trim()}
         fill
+        unoptimized={item.image_url?.startsWith("https://www.screenprintingbali.com/api/media/")}
         sizes={className.includes("lead")
           ? "(max-width: 720px) 100vw, 60vw"
           : "(max-width: 720px) 50vw, 30vw"}
       />
-      <div className="work-item__meta">{item.meta}</div>
+      {caption && <div className="work-item__meta">{caption}</div>}
     </div>
   );
 }
@@ -83,7 +86,9 @@ export default async function Work({
   let items: PortfolioItem[] = [];
 
   try {
-    items = (await fetchPortfolioItems()).filter((item) => Boolean(item.image_url));
+    items = (await fetchPortfolioItems()).filter(
+      (item) => Boolean(item.image_url) && !isStudioEquipmentMeta(item.meta)
+    );
   } catch {
     // MySQL may be unavailable during build or initial setup; keep the contact CTA available.
   }
@@ -149,4 +154,3 @@ export default async function Work({
     </section>
   );
 }
-

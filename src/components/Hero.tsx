@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { fetchPortfolioItems } from "@/lib/portfolio";
 import type { PortfolioItem } from "@/lib/portfolio-types";
+import { getPortfolioCaption, isStudioEquipmentMeta } from "@/lib/portfolio-categories";
 
 const STARTING_POINTS = [
   {
@@ -26,6 +27,8 @@ const STARTING_POINTS = [
 
 function chooseStudioPhoto(items: PortfolioItem[]) {
   const photos = items.filter((item) => Boolean(item.image_url));
+  const equipmentPhoto = photos.find((item) => isStudioEquipmentMeta(item.meta));
+  if (equipmentPhoto) return equipmentPhoto;
   const studioPhoto = photos.find((item) =>
     /\b(machine|equipment|press|screen|studio|workshop|ink|production|tools|squeegee)\b/i.test(
       `${item.title_line1} ${item.title_line2} ${item.meta}`
@@ -56,6 +59,7 @@ export default async function Hero() {
   } catch {
     // Keep the studio illustration visible while the portfolio database is unavailable.
   }
+  const studioCaption = studioPhoto ? getPortfolioCaption(studioPhoto.meta) : "";
 
   return (
     <section className="hero hero--editorial">
@@ -91,9 +95,10 @@ export default async function Hero() {
             {studioPhoto?.image_url ? (
               <Image
                 src={studioPhoto.image_url}
-                alt={`${studioPhoto.title_line1} ${studioPhoto.title_line2} ${studioPhoto.meta}`.trim()}
+                alt={`${studioPhoto.title_line1} ${studioPhoto.title_line2} ${studioCaption}`.trim()}
                 fill
                 priority
+                unoptimized={studioPhoto.image_url.startsWith("https://www.screenprintingbali.com/api/media/")}
                 sizes="(max-width: 720px) 100vw, 48vw"
                 className="hero__visual-photo"
               />
@@ -109,7 +114,7 @@ export default async function Hero() {
             <div className="hero__visual-grain" aria-hidden="true" />
             <div className="hero__visual-caption">
               <span>FIELD NOTE 001</span>
-              <span>{studioPhoto?.meta || "The work starts at the screen."}</span>
+              <span>{studioCaption || "The work starts at the screen."}</span>
             </div>
           </div>
           <div className="hero__seal" aria-label="Made in Bali">
@@ -147,4 +152,3 @@ export default async function Hero() {
     </section>
   );
 }
-
