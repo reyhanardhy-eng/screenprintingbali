@@ -67,8 +67,8 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
           <Link href="/">Home</Link><span aria-hidden="true">/</span><span>{data.title}</span>
         </nav>
 
-        <section className="seo-hero">
-          <div>
+        <section className={`seo-hero seo-hero--${data.slug}`}>
+          <div className="seo-hero__copy">
             <p className="eyebrow">{data.eyebrow}</p>
             <h1>{data.title}</h1>
             <p className="seo-hero__intro">{data.intro}</p>
@@ -80,6 +80,10 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
             </div>
           </div>
           <aside className="seo-facts" aria-label="Service details">
+            <div className="seo-facts__art" aria-hidden="true">
+              <svg viewBox="0 0 240 150" fill="none"><path d="M26 25h188v100H26z" /><path d="M45 44h78v62H45zM140 45h54M140 64h54M140 83h36" /><circle cx="84" cy="75" r="18" /></svg>
+              <span>SPB / 08°39′S</span>
+            </div>
             {data.facts.map((fact) => (
               <div className="seo-facts__item" key={fact.label}>
                 <span>{fact.label}</span><strong>{fact.value}</strong>

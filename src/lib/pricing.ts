@@ -1,6 +1,7 @@
 import "server-only";
 import type { RowDataPacket } from "mysql2/promise";
 import type { PricingData, PrintMethod } from "./pricing-types";
+import { LOCAL_PREVIEW_PRICING } from "./pricing-preview";
 import { rows } from "./db";
 
 type PrintMethodRow = RowDataPacket & PrintMethod & { applicable_products: unknown };
@@ -19,6 +20,12 @@ function decodeProducts(value: unknown): string[] | null {
   return null;
 }
 export async function fetchPricingData(): Promise<PricingData> {
+  // Local design previews should work without Hostinger credentials. This seed
+  // is development-only; production continues to read the live MySQL tables.
+  if (process.env.NODE_ENV === "development" && !process.env.DB_HOST && !process.env.DATABASE_URL) {
+    return LOCAL_PREVIEW_PRICING;
+  }
+
   const [products, fabrics, cuts, bagSizes, printMethods, designSizes] = await Promise.all([
     rows("SELECT slug, label, has_cut_option, has_bag_size_option, moq, sort_order FROM products ORDER BY sort_order"),
     rows("SELECT id, product_slug, value, label, price, sort_order FROM fabrics ORDER BY sort_order"),

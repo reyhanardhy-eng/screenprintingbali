@@ -9,9 +9,9 @@ export const metadata = sitePageMetadata("/work", "Portfolio & Project Photos", 
 export const revalidate = 60;
 
 export default function WorkPage() {
-  return <><Topbar /><main className="inner-page">
-    <div className="container inner-page__intro"><p className="eyebrow">Selected work / Bali</p><h1>Print, made tangible.</h1><p>A selection of projects produced by our studio. Each brief has its own garment, artwork, quantity, and finish; ask us what will work for yours.</p></div>
-    <Work layout="grid" title="Projects from the studio." />
+  return <><Topbar /><main className="inner-page inner-page--work work-archive">
+    <Work layout="editorial" headingLevel={1} title="The proof is in the print." intro="A closer look at garments, artwork, ink, and finished runs from the Bali studio." />
+    <div className="container work-archive__afterword"><span>MADE IN-HOUSE · BALI, INDONESIA</span><a href="/contact">Make something for your label <span aria-hidden="true">↗</span></a></div>
     <FinalCta />
   </main><Footer /></>;
 }

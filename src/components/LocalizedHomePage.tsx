@@ -123,7 +123,7 @@ export default function LocalizedHomePage({ locale }: { locale: "id" | "zh-cn" }
   const whatsapp = "https://wa.me/6283174145415?text=" + encodeURIComponent(content.message);
 
   return (
-    <main className="localized-page" lang={content.htmlLang}>
+    <main className={`localized-page localized-page--${locale}`} lang={content.htmlLang}>
       <div className="container">
         <header className="localized-page__header">
           <Link className="seo-page__brand" href="/">Screenprinting Bali<span>/ Studio</span></Link>
@@ -138,13 +138,23 @@ export default function LocalizedHomePage({ locale }: { locale: "id" | "zh-cn" }
         </header>
 
         <section className="localized-page__hero">
-          <p className="eyebrow">{content.eyebrow}</p>
-          <h1>{content.h1}</h1>
-          <p>{content.intro}</p>
-          <div className="seo-hero__actions">
-            <a className="btn" href={whatsapp} target="_blank" rel="noopener noreferrer">{content.primaryCta} <span aria-hidden="true">↗</span></a>
-            <a className="btn btn--ghost" href="#methods">{content.methodsCta}</a>
+          <div className="localized-page__hero-copy">
+            <p className="eyebrow">{content.eyebrow}</p>
+            <h1>{content.h1}</h1>
+            <p>{content.intro}</p>
+            <div className="seo-hero__actions">
+              <a className="btn" href={whatsapp} target="_blank" rel="noopener noreferrer">{content.primaryCta} <span aria-hidden="true">↗</span></a>
+              <a className="btn btn--ghost" href="#methods">{content.methodsCta}</a>
+            </div>
           </div>
+          <aside className="localized-page__hero-art" aria-label={content.localName}>
+            <svg viewBox="0 0 480 360" fill="none" aria-hidden="true">
+              <path d="M76 54h328v244H76z" /><path d="M106 84h268v184H106z" /><circle cx="240" cy="176" r="84" /><circle cx="240" cy="176" r="56" /><path d="M240 74v28m0 148v28M138 176h28m148 0h28M165 101l20 20m110 110 20 20m0-150-20 20M185 231l-20 20" />
+            </svg>
+            <p className="eyebrow">{content.nav.methods} / {content.nav.process}</p>
+            <strong>{content.localName}</strong>
+            <span>{content.steps[0].title}</span>
+          </aside>
         </section>
 
         <section className="localized-page__section">

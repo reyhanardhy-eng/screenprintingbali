@@ -78,10 +78,14 @@ export default async function Work({
   layout = "marquee",
   limit,
   title,
+  intro,
+  headingLevel = 2,
 }: {
   layout?: "marquee" | "grid" | "editorial";
   limit?: number;
   title?: string;
+  intro?: string;
+  headingLevel?: 1 | 2;
 }) {
   let items: PortfolioItem[] = [];
 
@@ -95,17 +99,18 @@ export default async function Work({
 
   const displayItems = typeof limit === "number" ? items.slice(0, limit) : items;
   const [row1, row2] = splitIntoRows(displayItems);
+  const HeadingTag = headingLevel === 1 ? "h1" : "h2";
 
   return (
     <section id="work">
       <div className="container">
         <div className={`section-head${layout === "editorial" ? " section-head--editorial" : " section-head--center"}`}>
           {layout === "editorial" && <p className="eyebrow">Field notes from our Bali studio</p>}
-          <h2 className="section-head__title">
+          <HeadingTag className="section-head__title">
             {title ?? (items.length > 0 ? "Some things we’ve printed." : "Let’s make your idea real.")}
-          </h2>
+          </HeadingTag>
           {layout === "editorial" && (
-            <p className="section-head__intro">Screens, inks, samples, finished pieces — the full story of a production run, made in our Bali studio.</p>
+            <p className="section-head__intro">{intro ?? "Screens, inks, samples, finished pieces — the full story of a production run, made in our Bali studio."}</p>
           )}
         </div>
 
