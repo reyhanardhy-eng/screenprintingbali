@@ -33,6 +33,7 @@ export default function Footer() {
             <Link href="/screen-printing-bali">Screen printing for brands</Link>
             <Link href="/dtf-printing-bali">DTF printing</Link>
             <Link href="/apparel-brand-starter-bali">Brand Starter</Link>
+            <Link href="/ordering-apparel-in-bali">Apparel ordering guide</Link>
           </div>
           <div className="footer__col">
             <h5>Find us</h5>

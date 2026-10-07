@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: "Screenprinting Bali",
     type: "website",
     locale: "id_ID",
-    images: [{ url: "/images/spb_logo.png", width: 1200, height: 1200, alt: "Screenprinting Bali" }],
+    images: [{ url: "/images/spb_logo.png", width: 2584, height: 3544, alt: "Screenprinting Bali" }],
   },
 };
 

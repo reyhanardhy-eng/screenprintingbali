@@ -25,5 +25,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${site}/studio` },
     { url: `${site}/faq` },
     { url: `${site}/contact` },
+    { url: `${site}/ordering-apparel-in-bali` },
   ];
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { rows } from "./db";
+import { setPortfolioCategory } from "./portfolio-categories";
 import type { PortfolioItem } from "./portfolio-types";
 
 export type { PortfolioItem } from "./portfolio-types";
@@ -27,8 +28,19 @@ const LOCAL_PREVIEW_IMAGES = [
   "01aebc79-edb1-4963-aa56-e3051edf8a95.webp",
 ];
 
+const LOCAL_PREVIEW_STUDIO_EQUIPMENT = [
+  {
+    image_url: "/images/studio-screenpress-01.webp",
+    caption: "Carousel screen-printing press · workshop setup",
+  },
+  {
+    image_url: "/images/studio-screenpress-02.webp",
+    caption: "Carousel screen-printing press · garment setup",
+  },
+];
+
 function getLocalPreviewItems(): PortfolioItem[] {
-  return LOCAL_PREVIEW_IMAGES.map((filename, index) => ({
+  const portfolioItems = LOCAL_PREVIEW_IMAGES.map((filename, index) => ({
     id: index + 1,
     title_line1: "Screenprinting Bali",
     title_line2: `Portfolio ${String(index + 1).padStart(2, "0")}`,
@@ -36,6 +48,17 @@ function getLocalPreviewItems(): PortfolioItem[] {
     image_url: `https://www.screenprintingbali.com/api/media/${filename}`,
     sort_order: index,
   }));
+
+  const equipmentItems = LOCAL_PREVIEW_STUDIO_EQUIPMENT.map((item, index) => ({
+    id: LOCAL_PREVIEW_IMAGES.length + index + 1,
+    title_line1: "Screen-printing",
+    title_line2: "Carousel press",
+    meta: setPortfolioCategory(item.caption, true),
+    image_url: item.image_url,
+    sort_order: LOCAL_PREVIEW_IMAGES.length + index,
+  }));
+
+  return [...portfolioItems, ...equipmentItems];
 }
 
 export async function fetchPortfolioItems(): Promise<PortfolioItem[]> {

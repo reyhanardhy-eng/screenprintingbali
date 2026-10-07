@@ -3,6 +3,7 @@ import Link from "next/link";
 
 export type ServicePageData = {
   slug: string;
+  kind?: "guide";
   title: string;
   description: string;
   eyebrow: string;
@@ -33,7 +34,8 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: data.title, item: pageUrl },
+      ...(data.kind === "guide" ? [] : [{ "@type": "ListItem", position: 2, name: "Services", item: `${SITE_URL}/services` }]),
+      { "@type": "ListItem", position: data.kind === "guide" ? 2 : 3, name: data.title, item: pageUrl },
     ],
   };
 
@@ -42,7 +44,24 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
     <main className="seo-page" lang="en">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [breadcrumbJsonLd, {
+            "@type": data.kind === "guide" ? "WebPage" : "Service",
+            "@id": `${pageUrl}#${data.kind === "guide" ? "guide" : "service"}`,
+            name: data.title,
+            description: data.description,
+            url: pageUrl,
+            ...(data.kind === "guide" ? {
+              inLanguage: "en",
+              publisher: { "@id": `${SITE_URL}/#studio` },
+            } : {
+              serviceType: data.title,
+              provider: { "@id": `${SITE_URL}/#studio` },
+              areaServed: { "@type": "Place", name: "Bali, Indonesia" },
+            }),
+          }],
+        }).replace(/</g, "\\u003c") }}
       />
       <header className="seo-page__header">
         <Link className="seo-page__brand" href="/" aria-label="Screenprinting Bali home">
@@ -64,7 +83,7 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
 
       <div className="container seo-page__container">
         <nav className="seo-breadcrumb" aria-label="Breadcrumb">
-          <Link href="/">Home</Link><span aria-hidden="true">/</span><span>{data.title}</span>
+          <Link href="/">Home</Link><span aria-hidden="true">/</span>{data.kind !== "guide" && <><Link href="/services">Services</Link><span aria-hidden="true">/</span></>}<span>{data.title}</span>
         </nav>
 
         <section className={`seo-hero seo-hero--${data.slug}`}>
@@ -105,6 +124,7 @@ export default function ServiceLandingPage({ data }: { data: ServicePageData }) 
           ))}
 
           <section className="seo-copy-section">
+            {data.kind !== "guide" && <p>Planning your first order or visiting Bali? Read our <Link href="/ordering-apparel-in-bali">custom apparel ordering guide</Link> before preparing your brief.</p>}
             <h2>Explore related services</h2>
             <div className="localized-cards">
               {RELATED_SERVICES.filter((service) => service.slug !== data.slug).map((service) => (

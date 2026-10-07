@@ -35,6 +35,7 @@ const QUICK_LINKS = [
   ["Price calculator", "/pricing"],
   ["Meet the studio", "/studio"],
   ["Common questions", "/faq"],
+  ["Plan your first brand drop", "/ordering-apparel-in-bali"],
   ["Talk through an idea", "/contact"],
 ] as const;
 

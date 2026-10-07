@@ -3,21 +3,7 @@ import type { Metadata } from "next";
 const SITE_URL = "https://screenprintingbali.com";
 
 export function serviceMetadata(slug: string, title: string, description: string): Metadata {
-  const url = `${SITE_URL}/${slug}`;
-  return {
-    title,
-    description,
-    alternates: { canonical: url },
-    openGraph: {
-      title,
-      description,
-      url,
-      siteName: "Screenprinting Bali",
-      type: "website",
-      locale: "en_US",
-      images: [{ url: "/images/spb_logo.png", width: 1200, height: 1200, alt: "Screenprinting Bali" }],
-    },
-  };
+  return sitePageMetadata(`/${slug}`, title, description);
 }
 
 export function sitePageMetadata(path: string, title: string, description: string): Metadata {
@@ -36,7 +22,7 @@ export function sitePageMetadata(path: string, title: string, description: strin
       siteName: "Screenprinting Bali",
       type: "website",
       locale: "en_US",
-      images: [{ url: "/images/spb_logo.png", width: 1200, height: 1200, alt: "Screenprinting Bali" }],
+      images: [{ url: "/images/spb_logo.png", width: 2584, height: 3544, alt: "Screenprinting Bali" }],
     },
     twitter: {
       card: "summary_large_image",

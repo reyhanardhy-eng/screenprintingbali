@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AIChatWidget from "@/components/AIChatWidget";
-import { localizedHomeAlternates } from "@/lib/seo-metadata";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://screenprintingbali.com"),
@@ -12,10 +11,6 @@ export const metadata: Metadata = {
   description:
     "In-house screen printing, DTF, embroidery, and garment finishing in Bali for brand drops and merchandise. Check minimums and request a WhatsApp quote.",
   authors: [{ name: "Screenprinting Bali" }],
-  alternates: {
-    canonical: "https://screenprintingbali.com",
-    languages: localizedHomeAlternates,
-  },
   robots: {
     index: true,
     follow: true,
@@ -56,6 +51,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
+  "@id": "https://screenprintingbali.com/#studio",
   name: "Screenprinting Bali",
   description:
     "A design-led screen printing and garment studio in Bali. In-house production for brand drops, small runs, and one-off custom prints.",
@@ -81,7 +77,7 @@ export default function RootLayout({
       <body>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
         />
         {children}
         <AIChatWidget />

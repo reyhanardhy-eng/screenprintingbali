@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const NAV_LINKS = [
+  ["Home", "/"],
   ["Services", "/services"],
   ["Work", "/work"],
   ["Pricing", "/pricing"],
@@ -27,8 +28,8 @@ export default function Topbar() {
             <span>Bali / Studio</span>
           </span>
         </Link>
-        <nav className="nav" aria-label="Main navigation">
-          {NAV_LINKS.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
+        <nav className="nav nav--floating" aria-label="Main navigation">
+          {NAV_LINKS.map(([label, href]) => <Link className={href === "/" ? "nav__home" : undefined} href={href} key={href}>{label}</Link>)}
         </nav>
         <details className="mobile-menu">
           <summary aria-label="Open navigation menu">Menu <span aria-hidden="true">☰</span></summary>
