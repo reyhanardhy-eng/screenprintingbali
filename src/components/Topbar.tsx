@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
   ["Home", "/"],
@@ -12,6 +15,11 @@ const NAV_LINKS = [
 ] as const;
 
 export default function Topbar() {
+  const pathname = usePathname() || "/";
+  function isActive(href: string) {
+    return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   return (
     <header className="topbar">
       <div className="container topbar__inner">
@@ -29,12 +37,12 @@ export default function Topbar() {
           </span>
         </Link>
         <nav className="nav nav--floating" aria-label="Main navigation">
-          {NAV_LINKS.map(([label, href]) => <Link className={href === "/" ? "nav__home" : undefined} href={href} key={href}>{label}</Link>)}
+          {NAV_LINKS.map(([label, href]) => <Link className={isActive(href) ? "nav__active" : undefined} aria-current={isActive(href) ? "page" : undefined} href={href} key={href}>{label}</Link>)}
         </nav>
         <details className="mobile-menu">
           <summary aria-label="Open navigation menu">Menu <span aria-hidden="true">☰</span></summary>
           <nav aria-label="Mobile navigation">
-            {NAV_LINKS.map(([label, href]) => <Link href={href} key={href}>{label}</Link>)}
+            {NAV_LINKS.map(([label, href]) => <Link className={isActive(href) ? "nav__active" : undefined} aria-current={isActive(href) ? "page" : undefined} href={href} key={href}>{label}</Link>)}
             <Link href="/id" lang="id">Bahasa Indonesia</Link>
             <Link href="/zh-cn" lang="zh-Hans">简体中文</Link>
           </nav>
