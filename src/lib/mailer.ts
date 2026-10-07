@@ -2,6 +2,10 @@ import "server-only";
 import nodemailer from "nodemailer";
 import { publicAppUrl } from "./security";
 
+export function isPasswordResetMailConfigured(): boolean {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
+}
+
 function transport() {
   const host = process.env.SMTP_HOST;
   const user = process.env.SMTP_USER;

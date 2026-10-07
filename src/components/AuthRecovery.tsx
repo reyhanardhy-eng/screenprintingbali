@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PasswordInput from "@/components/PasswordInput";
+import { readRememberedAdminEmail } from "@/lib/remembered-admin-email";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { setEmail(readRememberedAdminEmail()); }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setLoading(true); setError(""); setMessage("");
@@ -25,13 +28,14 @@ export function ForgotPasswordForm() {
 
   return <div className="admin-page auth-card">
     <h1>Admin password recovery</h1>
-    <p className="admin-sub">Enter your admin email. If it matches an account, we’ll send a one-time recovery link.</p>
+    <p className="admin-sub">Enter your admin email to request a one-time password reset link. A remembered email is filled in automatically on this device.</p>
     {message && <p className="admin-status" role="status">{message}</p>}
     {error && <p className="admin-status" role="alert">{error}</p>}
     <form onSubmit={submit}>
       <div className="auth-field"><label className="calc-field__label" htmlFor="reset-email">Email</label><input id="reset-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></div>
       <button className="admin-save-btn" disabled={loading}>{loading ? "Sending…" : "Send reset link"}</button>
     </form>
+    <p className="admin-sub">Check your inbox and Spam folder. Links expire after 20 minutes. After resetting your password, use your authenticator or a saved recovery code to sign in.</p>
     <a className="auth-link" href="/admin/login">Back to sign in</a>
   </div>;
 }

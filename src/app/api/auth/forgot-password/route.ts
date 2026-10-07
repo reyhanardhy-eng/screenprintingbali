@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createAuthToken } from "@/lib/auth-tokens";
-import { sendPasswordResetEmail } from "@/lib/mailer";
+import { isPasswordResetMailConfigured, sendPasswordResetEmail } from "@/lib/mailer";
 import { rows } from "@/lib/db";
 import { assertSameOrigin, clientAddress, checkRateLimit } from "@/lib/security";
 import type { RowDataPacket } from "mysql2/promise";
@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
   const ip = clientAddress(request);
   if (!(await checkRateLimit(`reset:ip:${ip}`, 8, 3600)) || !(await checkRateLimit(`reset:email:${email}`, 3, 3600))) {
     return NextResponse.json(generic, { status: 202 });
+  }
+  if (!isPasswordResetMailConfigured()) {
+    return NextResponse.json({ error: "Password recovery email is not configured yet. Contact the website owner to enable it." }, { status: 503 });
   }
   const users = await rows<RowDataPacket & { id: string }>(
     "SELECT id FROM users WHERE email = ? AND role = 'admin' AND disabled_at IS NULL LIMIT 1", [email]
